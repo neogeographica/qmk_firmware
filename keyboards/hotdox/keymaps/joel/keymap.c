@@ -1,23 +1,14 @@
 #include QMK_KEYBOARD_H
 #include "version.h"
 
-// XXX TODO:
-// Do we really need to overwrite page up/down keys on layer 3?
-
 bool l1_lock;
 bool l2_lock;
-bool l3_lock;
-bool l3_left_shift_down;
-bool l3_right_shift_down;
 bool sys_chord;
 bool sys_chord_flash;
 
 enum custom_keycodes {
     JKC_L1 = SAFE_RANGE,
-    JKC_L2_L,
-    JKC_L2_R,
-    JKC_L3,
-    JKC_NOTL3,
+    JKC_L2,
     JKC_SYS,
     JKC_SYSFL
 };
@@ -26,22 +17,21 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 
     // Layer 0: default/base
     // has keys for momentarily enabling or locking/unlocking layer 1 or 2
-    // has key for locking/unlocking layer 3
     [0] = LAYOUT_ergodox(
         // left hand
-        KC_ESC,   KC_1,     KC_2,     KC_3,     KC_4,     KC_5,     KC_MINS,
+        QK_GESC,  KC_1,     KC_2,     KC_3,     KC_4,     KC_5,     KC_MINS,
         KC_TAB,   KC_Q,     KC_W,     KC_E,     KC_R,     KC_T,     JKC_SYS,
         KC_LCTL,  KC_A,     KC_S,     KC_D,     KC_F,     KC_G,
-        JKC_L2_L, KC_Z,     KC_X,     KC_C,     KC_V,     KC_B,     JKC_SYS,
-        KC_GRV,   KC_PGUP,  KC_PGDN,  KC_LALT,  JKC_L1,
-                                                          JKC_L3,   KC_MUTE,
+        JKC_L2,   KC_Z,     KC_X,     KC_C,     KC_V,     KC_B,     JKC_SYS,
+        CW_TOGG,  KC_PGUP,  KC_PGDN,  KC_LALT,  JKC_L1,
+                                                          LGUI(KC_L), KC_MUTE,
                                                                     KC_HOME,
                                                 KC_LSFT,  KC_BSPC,  KC_LGUI,
         // right hand
         KC_EQL,   KC_6,     KC_7,     KC_8,     KC_9,     KC_0,     KC_F11,
         KC_LBRC,  KC_Y,     KC_U,     KC_I,     KC_O,     KC_P,     KC_BSLS,
                   KC_H,     KC_J,     KC_K,     KC_L,     KC_SCLN,  KC_QUOT,
-        KC_RBRC,  KC_N,     KC_M,     KC_COMM,  KC_DOT,   KC_SLSH,  JKC_L2_R,
+        KC_RBRC,  KC_N,     KC_M,     KC_COMM,  KC_DOT,   KC_SLSH,  JKC_L2,
                             JKC_L1,   KC_LEFT,  KC_DOWN,  KC_UP,    KC_RGHT,
         KC_VOLD,  KC_VOLU,
                   KC_END,
@@ -50,8 +40,6 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 
     // Layer 1: symbols/special
     // is mutually exclusive with layer 2
-    // can be activated from any combo of layers that excludes layer 2
-    // does not prevent locking/unlocking layer 3
     [1] = LAYOUT_ergodox(
         // left hand
         KC_PWR,   KC_F1,    KC_F2,    KC_F3,    KC_F4,    KC_F5,    KC_SLEP,
@@ -59,7 +47,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
         KC_TRNS,  KC_LEFT,  KC_DOWN,  KC_RGHT,  KC_MINS,  KC_GRV,
         JKC_SYSFL,KC_EXLM,  KC_AT,    KC_HASH,  KC_DLR,   KC_PERC,  KC_TRNS,
         KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,
-                                                          KC_TRNS,  KC_TRNS,
+                                                          LCTL(LGUI(KC_Q)), KC_TRNS,
                                                                     KC_INS,
                                                 KC_CAPS,  KC_DEL,   KC_TRNS,
         // right hand
@@ -74,8 +62,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     ),
 
     // Layer 2: mouse/numpad
-    // is mutually exclusive with layers 1 and 3
-    // can only be activated while layer 0 is the only active layer
+    // is mutually exclusive with layer 1
     [2] = LAYOUT_ergodox(
         // left hand
         KC_TRNS,  KC_NO,    KC_NO,    KC_NO,    KC_NO,    KC_NO,    KC_NO,
@@ -94,33 +81,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
                             JKC_SYSFL,KC_P0,    KC_PDOT,  KC_PENT,  KC_NO,
         KC_NO,    KC_NO,
                   KC_TRNS,
-        KC_TRNS,  KC_TRNS,  KC_P0),
-
-    // Layer 3: more normal shift and lefthand-mod key placement
-    // is mutually exclusive with layer 2
-    // can be activated from any combo of layers that excludes layer 2
-    // does not prevent momentarily enabling or locking/unlocking layer 1
-    // has key to momentarily disable its changes (except for L/R shift keys)
-    [3] = LAYOUT_ergodox(
-        // left hand
-        KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,
-        KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,
-        KC_CAPS,  KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,
-        KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,
-        KC_LCTL,  KC_LCTL,  KC_LALT,  KC_TRNS,  KC_TRNS,
-                                                          KC_TRNS,  KC_TRNS,
-                                                                    KC_TRNS,
-                                                KC_SPC,   KC_TRNS,  JKC_NOTL3,
-        // right hand
-        KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,
-        KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,
-                  KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,
-        KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,
-                            KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,
-        KC_TRNS,  KC_TRNS,
-                  KC_TRNS,
-        KC_TRNS,  KC_TRNS,  KC_TRNS
-    )
+        KC_TRNS,  KC_TRNS,  KC_P0)
 };
 
 // Make double-sure our state and the layer state agree that there are no
@@ -129,16 +90,13 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 void matrix_init_user(void) {
     l1_lock = false;
     l2_lock = false;
-    l3_lock = false;
-    l3_left_shift_down = false;
-    l3_right_shift_down = false;
     sys_chord = false;
     sys_chord_flash = false;
     layer_clear();
 }
 
 // Our hook for special actions on key events. Currently this handles the
-// enable and lock behaviors for layers 1/2/3, and the JKC_SYS/JKC_SYSFL keys.
+// enable and lock behaviors for layers 1/2, and the JKC_SYS/JKC_SYSFL keys.
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     switch (keycode) {
 
@@ -174,25 +132,10 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
             }
             return false; // Skip all further processing of this key
 
-        // Same kind of logic as for L1. An additional condition
-        // here though, in that if L3 is true when key is pressed then we
-        // we should treat it as KC_LSFT (even if layer 3 is temporarily
-        // disabled by JKC_NOTL3).
-        case JKC_L2_L:
-        case JKC_L2_R:
+        case JKC_L2:
             if (record->event.pressed) {
                 // Key Down
-                if (l3_lock) {
-                    // Treat as shift key.
-                    if (keycode == JKC_L2_L) {
-                        register_code(KC_LSFT);
-                        l3_left_shift_down = true;
-                    } else {
-                        register_code(KC_RSFT);
-                        l3_right_shift_down = true;
-                    }
-                }
-                else if (IS_LAYER_OFF(2)) {
+                if (IS_LAYER_OFF(2)) {
                     // Layer 2 isn't on yet, so turn it on.
                     layer_on(2);
                 } else {
@@ -206,53 +149,10 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
                 }
             } else {
                 // Key Up
-                if (l3_left_shift_down) {
-                    // Key was pressed as a shift key, so should un-shift now.
-                    unregister_code(KC_LSFT);
-                    l3_left_shift_down = false;
-                } else if (l3_right_shift_down) {
-                    // Ditto.
-                    unregister_code(KC_RSFT);
-                    l3_right_shift_down = false;
-                }
-                else if (!l2_lock) {
+                if (!l2_lock) {
                     // If not locked, clear layer 2.
                     layer_off(2);
                 }
-            }
-            return false; // Skip all further processing of this key
-
-        // For layer 3 we have a "normal" behaving layer lock key, but we'll
-        // track it specially so we can make sure it interacts properly with
-        // the other layer 3 control below, which is a momentary layer state
-        // flip, and the left/right shift key behavior described above. It's
-        // also good to keep the layer 3 lock LED active even during a
-        // momentary disable.
-        case JKC_L3:
-            if (record->event.pressed) {
-                // Key Down
-                // We are locking or unlocking layer 3.
-                l3_lock = !l3_lock;
-                if (l3_lock) {
-                    layer_on(3);
-                    ergodox_right_led_3_on();
-                } else {
-                    layer_off(3);
-                    ergodox_right_led_3_off();
-                }
-            }
-            return false; // Skip all further processing of this key
-
-        // For this keycode, flip the state of layer 3 on both key down and key
-        // up. However, don't do anything if l3_lock is false. The main thing
-        // this protects against is any case where we happened to exit layer 3
-        // while this key was being held down... we don't want to turn layer 3
-        // back on with the key up event in that case.
-        case JKC_NOTL3:
-            if (l3_lock) {
-                // Layer 3 lock is currently active. Flip layer 3 state on
-                // both key down and key up.
-                layer_invert(3);
             }
             return false; // Skip all further processing of this key
 
@@ -271,15 +171,12 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
                     } else {
                         // Just do the normal sys chord behavior: dump info.
                         send_string_with_delay_P(PSTR(QMK_KEYBOARD "/" QMK_KEYMAP " @ " QMK_VERSION " locked layers: "), 10);
-                        if (l1_lock || l2_lock || l3_lock) {
+                        if (l1_lock || l2_lock) {
                             if (l1_lock) {
                                 send_string_with_delay_P(PSTR("1 "), 10);
                             }
                             if (l2_lock) {
                                 send_string_with_delay_P(PSTR("2 "), 10);
-                            }
-                            if (l3_lock) {
-                                send_string_with_delay_P(PSTR("3 "), 10);
                             }
                         } else {
                             send_string_with_delay_P(PSTR("none"), 10);
@@ -299,7 +196,15 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
         // key itself is not on a base layer, that means that flash-enable
         // is a four key combo.
         case JKC_SYSFL:
-            sys_chord_flash = record->event.pressed;
+            if (record->event.pressed) {
+                // Key Down
+                sys_chord_flash = true;
+                ergodox_right_led_3_on();
+            } else {
+                // Key Up
+                sys_chord_flash = false;
+                ergodox_right_led_3_off();
+            }
             return false; // Skip all further processing of this key
 
         default:
