@@ -13,6 +13,14 @@ enum custom_keycodes {
     JKC_SYSFL
 };
 
+// Notes about LEDs:
+
+// LED 1 is closest to the USB cables, and separated a bit from the other two.
+// So that one will be used for the "ready to flash" indicator.
+
+// LED 2 is in the middle and LED 3 is rightmost. I ended up using the
+// rightmost LED for layer 1 lock and the middle LED for layer 2 lock.
+
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 
     // Layer 0: default/base
@@ -118,9 +126,9 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
                     // L1 control key AGAIN after locking, so unlock.
                     l1_lock = !l1_lock;
                     if (l1_lock) {
-                        ergodox_right_led_1_on();
+                        ergodox_right_led_3_on();
                     } else {
-                        ergodox_right_led_1_off();
+                        ergodox_right_led_3_off();
                     }
                 }
             } else {
@@ -199,11 +207,11 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
             if (record->event.pressed) {
                 // Key Down
                 sys_chord_flash = true;
-                ergodox_right_led_3_on();
+                ergodox_right_led_1_on();
             } else {
                 // Key Up
                 sys_chord_flash = false;
-                ergodox_right_led_3_off();
+                ergodox_right_led_1_off();
             }
             return false; // Skip all further processing of this key
 
