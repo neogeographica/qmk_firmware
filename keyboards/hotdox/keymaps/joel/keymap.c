@@ -1,16 +1,22 @@
 #include QMK_KEYBOARD_H
 #include "version.h"
 
-bool l1_lock;
-bool l2_lock;
+bool symbols_lock;
+bool mousenum_lock;
 bool sys_chord;
 bool sys_chord_flash;
 
 enum custom_keycodes {
-    JKC_L1 = SAFE_RANGE,
-    JKC_L2,
+    JKC_SYM = SAFE_RANGE,
+    JKC_MN,
     JKC_SYS,
     JKC_SYSFL
+};
+
+enum layers{
+  _MAIN = 0,
+  _SYMBOLS,
+  _MOUSENUM
 };
 
 // Notes about LEDs:
@@ -19,19 +25,71 @@ enum custom_keycodes {
 // So that one will be used for the "ready to flash" indicator.
 
 // LED 2 is in the middle and LED 3 is rightmost. I ended up using the
-// rightmost LED for layer 1 lock and the middle LED for layer 2 lock.
+// rightmost LED for _SYMBOLS lock and the middle LED for _MOUSENUM lock.
 
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 
-    // Layer 0: default/base
-    // has keys for momentarily enabling or locking/unlocking layer 1 or 2
-    [0] = LAYOUT_ergodox(
+/* Keymap _MAIN: default/base layer
+ *
+ * - alphanum keys in "normal" QWERTY positions, plus some other symbol keys
+ * - ergodox-ish thumb key placement for shift, enter, space, backspace
+ * - common thumb/pinky modifier keys where I like them
+ * - clusters of cursor-movement keys
+ * - keys to activate or lock other layers
+ * - volume control
+ * - screenlock combo for Windows and (some) Linux
+ *
+ * ,--------------------------------------------------.           ,--------------------------------------------------.
+ * | `/Esc  |   1  |   2  |   3  |   4  |   5  |   -  |           |   =  |   6  |   7  |   8  |   9  |   0  |   F11  |
+ * |--------+------+------+------+------+-------------|           |------+------+------+------+------+------+--------|
+ * | Tab    |   Q  |   W  |   E  |   R  |   T  |  SYS |           |   [  |   Y  |   U  |   I  |   O  |   P  |    \   |
+ * |--------+------+------+------+------+------|      |           |      |------+------+------+------+------+--------|
+ * | LCtrl  |   A  |   S  |   D  |   F  |   G  |------|           |------|   H  |   J  |   K  |   L  |   ;  |    '   |
+ * |--------+------+------+------+------+------|  SYS |           |   ]  |------+------+------+------+------+--------|
+ * | NUMPAD |   Z  |   X  |   C  |   V  |   B  |      |           |      |   N  |   M  |   ,  |   .  |   /  | NUMPAD |
+ * `--------+------+------+------+------+-------------'           `-------------+------+------+------+------+--------'
+ *   |CAPSWD| PgUp | PgDn | LAlt |  SYM |                                       |  SYM | Left | Down |  Up  | Right|
+ *   `----------------------------------'                                       `----------------------------------'
+ *                                        ,-------------.       ,-------------.
+ *                                        | WLOCK| Mute |       | Vol- | Vol+ |
+ *                                 ,------|------|------|       |------+------+------.
+ *                                 |      |      | Home |       |  End |      |      |
+ *                                 |LShift| Bksp |------|       |------| Enter| Space|
+ *                                 |      |      | LGui |       | RGui |      |      |
+ *                                 `--------------------'       `--------------------'
+ * 
+ * The upper-left key is normally Escape. Use GUI+key to generate a backtick.
+ * Use Shift+key to generate a tilde.
+ *
+ * SYM key activates the symbols/special layer. Normally is only active while
+ * held; press both SYM keys together to lock the layer. Press one SYM key
+ * again to unlock the layer. When the symbols/special layer is locked, LED 3
+ * will be lit.
+ *
+ * NUMPAD key activates the mouse/numpad layer. Normally is only active while
+ * held; press both NUMPAD keys together to lock the layer. Press one NUMPAD
+ * key again to unlock the layer. When the mouse/numpad layer is locked, LED
+ * 2 will be lit.
+ *
+ * CAPSWD activates "caps word" mode; letters will be capitalized and hyphens
+ * changed to underlines until the space key is pressed.
+ *
+ * WLOCK sends a macro (LGui-L) to lock the screen. This screen lock macro
+ * works for Windows and various Linux setups; for macOS see the corresponding
+ * key on the symbols/special layer.
+ *
+ * Pressing the two SYS keys together will normally type out information about
+ * the build and the currently active layers. If SYSFL is already held however
+ * (by chording the SYM and NUMPAD keys), then pressing the two SYS keys will
+ * reset the keyboard for flashing. When SYSFL is held, LED 1 will be lit.
+ */
+    [_MAIN] = LAYOUT_ergodox(
         // left hand
         QK_GESC,  KC_1,     KC_2,     KC_3,     KC_4,     KC_5,     KC_MINS,
         KC_TAB,   KC_Q,     KC_W,     KC_E,     KC_R,     KC_T,     JKC_SYS,
         KC_LCTL,  KC_A,     KC_S,     KC_D,     KC_F,     KC_G,
-        JKC_L2,   KC_Z,     KC_X,     KC_C,     KC_V,     KC_B,     JKC_SYS,
-        CW_TOGG,  KC_PGUP,  KC_PGDN,  KC_LALT,  JKC_L1,
+        JKC_MN,   KC_Z,     KC_X,     KC_C,     KC_V,     KC_B,     JKC_SYS,
+        CW_TOGG,  KC_PGUP,  KC_PGDN,  KC_LALT,  JKC_SYM,
                                                           LGUI(KC_L), KC_MUTE,
                                                                     KC_HOME,
                                                 KC_LSFT,  KC_BSPC,  KC_LGUI,
@@ -39,16 +97,49 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
         KC_EQL,   KC_6,     KC_7,     KC_8,     KC_9,     KC_0,     KC_F11,
         KC_LBRC,  KC_Y,     KC_U,     KC_I,     KC_O,     KC_P,     KC_BSLS,
                   KC_H,     KC_J,     KC_K,     KC_L,     KC_SCLN,  KC_QUOT,
-        KC_RBRC,  KC_N,     KC_M,     KC_COMM,  KC_DOT,   KC_SLSH,  JKC_L2,
-                            JKC_L1,   KC_LEFT,  KC_DOWN,  KC_UP,    KC_RGHT,
+        KC_RBRC,  KC_N,     KC_M,     KC_COMM,  KC_DOT,   KC_SLSH,  JKC_MN,
+                            JKC_SYM,  KC_LEFT,  KC_DOWN,  KC_UP,    KC_RGHT,
         KC_VOLD,  KC_VOLU,
-                  KC_END,
+        KC_END,
         KC_RGUI,  KC_ENT,   KC_SPC
     ),
 
-    // Layer 1: symbols/special
-    // is mutually exclusive with layer 2
-    [1] = LAYOUT_ergodox(
+/* Keymap _SYMBOLS: symbols/special layer (mutually exclusive with _MOUSENUM)
+ *
+ * - function keys
+ * - power/sleep/pause
+ * - access to symbols and arrow keys on the main three rows
+ * - media player
+ * - screen brightness
+ * - less-used "entry state" keys (caps/del/ins)
+ * - screenlock combo for macOS
+ *
+ * ,--------------------------------------------------.           ,--------------------------------------------------.
+ * | Power  |  F1  |  F2  |  F3  |  F4  |  F5  | Sleep|           | Pause|  F6  |  F7  |  F8  |  F9  |  F10 |   F12  |
+ * |--------+------+------+------+------+-------------|           |------+------+------+------+------+------+--------|
+ * |        | Space|  Up  | Enter|   _  |   ~  |      |           |      |   "  |   +  |   |  |   {  |   }  |        |
+ * |--------+------+------+------+------+------|      |           |      |------+------+------+------+------+--------|
+ * |        | Left | Down | Right|   -  |   `  |------|           |------|   '  |   =  |   \  |   [  |   ]  |        |
+ * |--------+------+------+------+------+------|      |           |      |------+------+------+------+------+--------|
+ * |  SYSFL |   !  |   @  |   #  |   $  |   %  |      |           |      |   ^  |   &  |   *  |   (  |   )  |  SYSFL |
+ * `--------+------+------+------+------+-------------'           `-------------+------+------+------+------+--------'
+ *   |      |      |      |      |      |                                       |      |  <<  | Stop | Play |  >>  |
+ *   `----------------------------------'                                       `----------------------------------'
+ *                                        ,-------------.       ,-------------.
+ *                                        | MLOCK|      |       | Brt- | Brt+ |
+ *                                 ,------|------|------|       |------+------+------.
+ *                                 |      |      |  Ins |       | Prev |      |      |
+ *                                 | Caps |  Del |------|       |------| Play | Next |
+ *                                 |      |      |      |       |      |      |      |
+ *                                 `--------------------'       `--------------------'
+ * 
+ * MLOCK sends a macro (LCtl-LGui-Q) to lock the screen. This screen lock macro
+ * works for macOS; for Windows and various Linux setups see the corresponding
+ * key on the base layer.
+ *
+ * SYSFL unlocks the keyboard-flashing combo; see base layer comments for more.
+ */
+    [_SYMBOLS] = LAYOUT_ergodox(
         // left hand
         KC_PWR,   KC_F1,    KC_F2,    KC_F3,    KC_F4,    KC_F5,    KC_SLEP,
         KC_TRNS,  KC_SPC,   KC_UP,    KC_ENT,   KC_UNDS,  KC_TILD,  KC_TRNS,
@@ -65,13 +156,41 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
         KC_TRNS,  KC_CIRC,  KC_AMPR,  KC_ASTR,  KC_LPRN,  KC_RPRN,  JKC_SYSFL,
                             KC_TRNS,  KC_MRWD,  KC_MSTP,  KC_MPLY,  KC_MFFD,
         KC_BRID,  KC_BRIU,
-                  KC_MPRV,
+        KC_MPRV,
         KC_TRNS,  KC_MPLY,  KC_MNXT
     ),
 
-    // Layer 2: mouse/numpad
-    // is mutually exclusive with layer 1
-    [2] = LAYOUT_ergodox(
+/* Keymap _MOUSENUM: mouse/numpad layer (mutually exclusive with _SYMBOLS)
+ *
+ * - left hand keys for mouse movement, wheel, and buttons
+ * - right hand keys for numpad
+ *
+ * XXX Need to revisit what is KC_NO here vs what is KC_TRNS. The general idea
+ * is to make sure that modifier keys are still available while muting other
+ * keys that might get accidentally hit.
+ *
+ * ,--------------------------------------------------.           ,--------------------------------------------------.
+ * |        | Null | Null | Null | Null | Null | Null |           | Null | Null |NumLck|  KP/ |  KP* |  KP- |  Null  |
+ * |--------+------+------+------+------+-------------|           |------+------+------+------+------+------+--------|
+ * |        |LClick| MsUp |RClick| WhUp | Null |      |           | Null | Null |  KP7 |  KP8 |  KP9 |  KP+ |  Null  |
+ * |--------+------+------+------+------+------|      |           |      |------+------+------+------+------+--------|
+ * |        |MsLeft|MsDown|MsRght|WhDown| Null |------|           |------| Null |  KP4 |  KP5 |  KP6 |  KP, |  Null  |
+ * |--------+------+------+------+------+------|      |           | Null |------+------+------+------+------+--------|
+ * |        | Btn3 | Btn4 | Btn5 | Null | Null |      |           |      | Null |  KP1 |  KP2 |  KP3 |  KP= |        |
+ * `--------+------+------+------+------+-------------'           `-------------+------+------+------+------+--------'
+ *   |      |      |      |      | SYSFL|                                       | SYSFL|  KP0 |  KP. | KPEnt| Null |
+ *   `----------------------------------'                                       `----------------------------------'
+ *                                        ,-------------.       ,-------------.
+ *                                        | Null | Null |       | Null | Null |
+ *                                 ,------|------|------|       |------+------+------.
+ *                                 |      |      |      |       |      |      |      |
+ *                                 |      |      |------|       |------|      |  KP0 |
+ *                                 |      |      |      |       |      |      |      |
+ *                                 `--------------------'       `--------------------'
+ *
+ * SYSFL unlocks the keyboard-flashing combo; see base layer comments for more.
+ */
+    [_MOUSENUM] = LAYOUT_ergodox(
         // left hand
         KC_TRNS,  KC_NO,    KC_NO,    KC_NO,    KC_NO,    KC_NO,    KC_NO,
         KC_TRNS,  KC_BTN1,  KC_MS_U,  KC_BTN2,  KC_WH_U,  KC_NO,    KC_TRNS,
@@ -88,7 +207,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
         KC_NO,    KC_NO,    KC_P1,    KC_P2,    KC_P3,    KC_PEQL,  KC_TRNS,
                             JKC_SYSFL,KC_P0,    KC_PDOT,  KC_PENT,  KC_NO,
         KC_NO,    KC_NO,
-                  KC_TRNS,
+        KC_TRNS,
         KC_TRNS,  KC_TRNS,  KC_P0)
 };
 
@@ -96,36 +215,38 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 // layers active on startup. Also behave as if none of the JKC_SYS keys are
 // currently depressed.
 void matrix_init_user(void) {
-    l1_lock = false;
-    l2_lock = false;
+    symbols_lock = false;
+    mousenum_lock = false;
     sys_chord = false;
     sys_chord_flash = false;
     layer_clear();
 }
 
 // Our hook for special actions on key events. Currently this handles the
-// enable and lock behaviors for layers 1/2, and the JKC_SYS/JKC_SYSFL keys.
+// enable and lock behaviors for _SYMBOLS and _MOUSENUM, and the
+// JKC_SYS/JKC_SYSFL keys.
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     switch (keycode) {
 
-        // For layer 1 and 2 control keys: It is assumed that there will be two
-        // of these (one each for left and right hand boards). Depressing a key
-        // will do a layer enable while the key is held. Simultaneously
-        // depressing both of the same kind of key will lock the layer on. If
-        // the layer is locked on, tap the same kind of key again to unlock.
-        case JKC_L1:
+        // For _SYMBOLS and _MOUSENUM control keys: It is assumed that there
+        // will be two of these (one each for left and right hand boards).
+        // Depressing a key will do a layer enable while the key is held.
+        // Simultaneously depressing both of the same kind of key will lock
+        // the layer on. If the layer is locked on, tap the same kind of key
+        // again to unlock.
+        case JKC_SYM:
             if (record->event.pressed) {
                 // Key Down
-                if (IS_LAYER_OFF(1)) {
-                    // Layer 1 isn't on yet, so turn it on.
-                    layer_on(1);
+                if (IS_LAYER_OFF(_SYMBOLS)) {
+                    // _SYMBOLS isn't on yet, so turn it on.
+                    layer_on(_SYMBOLS);
                 } else {
-                    // Layer 1 is already on. If l1_lock is not true yet, this
-                    // is because we are pushing both L1 control keys, so set
-                    // l1_lock to true. Otherwise this means we are pushing an
-                    // L1 control key AGAIN after locking, so unlock.
-                    l1_lock = !l1_lock;
-                    if (l1_lock) {
+                    // _SYMBOLS is already on. If symbols_lock is not true yet,
+                    // this is because we are pushing both control keys, so
+                    // set symbols_lock to true. Otherwise this means we are
+                    // pushing a control key AGAIN after locking, so unlock.
+                    symbols_lock = !symbols_lock;
+                    if (symbols_lock) {
                         ergodox_right_led_3_on();
                     } else {
                         ergodox_right_led_3_off();
@@ -133,23 +254,23 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
                 }
             } else {
                 // Key Up
-                if (!l1_lock) {
-                    // If not locked, clear layer 1.
-                    layer_off(1);
+                if (!symbols_lock) {
+                    // If not locked, clear _SYMBOLS.
+                    layer_off(_SYMBOLS);
                 }
             }
             return false; // Skip all further processing of this key
 
-        case JKC_L2:
+        case JKC_MN:
             if (record->event.pressed) {
                 // Key Down
-                if (IS_LAYER_OFF(2)) {
-                    // Layer 2 isn't on yet, so turn it on.
-                    layer_on(2);
+                if (IS_LAYER_OFF(_MOUSENUM)) {
+                    // _MOUSENUM isn't on yet, so turn it on.
+                    layer_on(_MOUSENUM);
                 } else {
-                    // Layer 2 is already on; we are locking or unlocking it.
-                    l2_lock = !l2_lock;
-                    if (l2_lock) {
+                    // _MOUSENUM is already on; we are locking or unlocking it.
+                    mousenum_lock = !mousenum_lock;
+                    if (mousenum_lock) {
                         ergodox_right_led_2_on();
                     } else {
                         ergodox_right_led_2_off();
@@ -157,9 +278,9 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
                 }
             } else {
                 // Key Up
-                if (!l2_lock) {
-                    // If not locked, clear layer 2.
-                    layer_off(2);
+                if (!mousenum_lock) {
+                    // If not locked, clear _MOUSENUM.
+                    layer_off(_MOUSENUM);
                 }
             }
             return false; // Skip all further processing of this key
@@ -179,12 +300,12 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
                     } else {
                         // Just do the normal sys chord behavior: dump info.
                         send_string_with_delay_P(PSTR(QMK_KEYBOARD "/" QMK_KEYMAP " @ " QMK_VERSION " locked layers: "), 10);
-                        if (l1_lock || l2_lock) {
-                            if (l1_lock) {
-                                send_string_with_delay_P(PSTR("1 "), 10);
+                        if (symbols_lock || mousenum_lock) {
+                            if (symbols_lock) {
+                                send_string_with_delay_P(PSTR("SYMBOLS "), 10);
                             }
-                            if (l2_lock) {
-                                send_string_with_delay_P(PSTR("2 "), 10);
+                            if (mousenum_lock) {
+                                send_string_with_delay_P(PSTR("MOUSE/NUMPAD "), 10);
                             }
                         } else {
                             send_string_with_delay_P(PSTR("none"), 10);
