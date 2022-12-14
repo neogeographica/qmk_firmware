@@ -432,6 +432,10 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
                     // The other JKC_SYS key is already pressed.
                     if (sys_chord_flash) {
                         // A FLASH-enable key is pressed too, so let's flash.
+                        ergodox_right_led_1_on();
+                        ergodox_right_led_2_on();
+                        ergodox_right_led_3_on();
+                        _delay_ms(200);
                         reset_keyboard();
                     } else {
                         // Just do the normal sys chord behavior: dump info.
