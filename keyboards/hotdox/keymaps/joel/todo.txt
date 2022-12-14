@@ -1,0 +1,9 @@
+Alt-backtick/tilde for cycling app windows is awkward now. Possible solutions:
+
+- Make the lower-left key act as backtick/tilde if alt is held.
+
+- Make the lower-left key normally act as backtick/tilde. Make the capsword feature available with a modifier ... maybe put it on layer 1? Or if key is combo'd with shift?
+
+- Make the lower-left key just be backtick/tilde. Either drop the capsword feature or make it activate-able with shift double tap (#define DOUBLE_TAP_SHIFT_TURNS_ON_CAPS_WORD). This seems best?
+
+In the latter two cases, probably replace the keycap.
