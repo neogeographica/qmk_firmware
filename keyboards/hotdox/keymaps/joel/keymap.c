@@ -165,10 +165,6 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
  * - left hand keys for mouse movement, wheel, and buttons
  * - right hand keys for numpad
  *
- * XXX Need to revisit what is KC_NO here vs what is KC_TRNS. The general idea
- * is to make sure that modifier keys are still available while muting other
- * keys that might get accidentally hit.
- *
  * ,--------------------------------------------------.           ,--------------------------------------------------.
  * |        | Null | Null | Null | Null | Null | Null |           | Null | Null |NumLck|  KP/ |  KP* |  KP- |  Null  |
  * |--------+------+------+------+------+-------------|           |------+------+------+------+------+------+--------|
@@ -181,7 +177,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
  *   |      |      |      |      | SYSFL|                                       | SYSFL|  KP0 |  KP. | KPEnt| Null |
  *   `----------------------------------'                                       `----------------------------------'
  *                                        ,-------------.       ,-------------.
- *                                        | Null | Null |       | Null | Null |
+ *                                        |      |      |       |      |      |
  *                                 ,------|------|------|       |------+------+------.
  *                                 |      |      |      |       |      |      |      |
  *                                 |      |      |------|       |------|      |  KP0 |
@@ -197,7 +193,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
         KC_TRNS,  KC_MS_L,  KC_MS_D,  KC_MS_R,  KC_WH_D,  KC_NO,
         KC_TRNS,  KC_BTN3,  KC_BTN4,  KC_BTN5,  KC_NO,    KC_NO,    KC_TRNS,
         KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,  JKC_SYSFL,
-                                                          KC_NO,    KC_NO,
+                                                          KC_TRNS,  KC_TRNS,
                                                                     KC_TRNS,
                                                 KC_TRNS,  KC_TRNS,  KC_TRNS,
         // right hand
@@ -206,7 +202,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
                   KC_NO,    KC_P4,    KC_P5,    KC_P6,    KC_PCMM,  KC_NO,
         KC_NO,    KC_NO,    KC_P1,    KC_P2,    KC_P3,    KC_PEQL,  KC_TRNS,
                             JKC_SYSFL,KC_P0,    KC_PDOT,  KC_PENT,  KC_NO,
-        KC_NO,    KC_NO,
+        KC_TRNS,  KC_TRNS,
         KC_TRNS,
         KC_TRNS,  KC_TRNS,  KC_P0)
 };
