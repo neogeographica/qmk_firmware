@@ -1,9 +1,3 @@
-Alt-backtick/tilde for cycling app windows is awkward now. Possible solutions:
+Caps Lock key doesn't work in the symbols/special layer. Thinking it might be because releasing the layer clears the capslock state maybe? On the other hand an online key tester seems to indicate that it's just sending a Ctrl key event. I never use caps lock so maybe the best "solution" is just to find something else to put on that key.
 
-- Make the lower-left key act as backtick/tilde if alt is held.
-
-- Make the lower-left key normally act as backtick/tilde. Make the capsword feature available with a modifier ... maybe put it on layer 1? Or if key is combo'd with shift?
-
-- Make the lower-left key just be backtick/tilde. Either drop the capsword feature or make it activate-able with shift double tap (#define DOUBLE_TAP_SHIFT_TURNS_ON_CAPS_WORD). This seems best?
-
-In the latter two cases, probably replace the keycap.
+Also... Caps Word feature doesn't seem to work on macOS?

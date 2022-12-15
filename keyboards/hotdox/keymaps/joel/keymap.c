@@ -3,7 +3,6 @@
 
 bool symbols_lock;
 bool mousenum_lock;
-bool gui_chord;
 bool shooter_mode;
 bool shooter_left_shift_down;
 bool shooter_right_shift_down;
@@ -16,8 +15,6 @@ enum custom_keycodes {
     JKC_SYM = SAFE_RANGE,
     JKC_MN_L,
     JKC_MN_R,
-    JKC_GUI_L,
-    JKC_GUI_R,
     JKC_CW,
     JKC_LTHM,
     JKC_SYS,
@@ -38,6 +35,9 @@ enum layers{
 // LED 2 is in the middle and LED 3 is rightmost. I ended up using the
 // rightmost LED for _SYMBOLS lock and the middle LED for _MOUSENUM lock.
 
+
+// OK, let's define the keymaps for layers:
+
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 
 /* Notes about "shooter mode":
@@ -52,7 +52,8 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
  * - The two keys in the NUMPAD positions on the keymap will instead act as
  *   left and right shift keys.
  * - The key in the LShift position will instead act as a spacebar.
- * - The key in the CAPSWD position will instead act as the backtick/tilde key.
+ * - The key in the CPWD position will instead act as the backtick/tilde key.
+ *
  * The layer keymap descriptions below will not mention this; they describe
  * the keymap as it is when shooter mode is disabled.
  *
@@ -72,7 +73,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
  * - screenlock combo for Windows and (some) Linux
  *
  * ,--------------------------------------------------.           ,--------------------------------------------------.
- * | `/Esc  |   1  |   2  |   3  |   4  |   5  |   -  |           |   =  |   6  |   7  |   8  |   9  |   0  |   F11  |
+ * | Esc    |   1  |   2  |   3  |   4  |   5  |   -  |           |   =  |   6  |   7  |   8  |   9  |   0  |   F11  |
  * |--------+------+------+------+------+-------------|           |------+------+------+------+------+------+--------|
  * | Tab    |   Q  |   W  |   E  |   R  |   T  |  SYS |           |   [  |   Y  |   U  |   I  |   O  |   P  |    \   |
  * |--------+------+------+------+------+------|      |           |      |------+------+------+------+------+--------|
@@ -80,7 +81,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
  * |--------+------+------+------+------+------|  SYS |           |   ]  |------+------+------+------+------+--------|
  * | NUMPAD |   Z  |   X  |   C  |   V  |   B  |      |           |      |   N  |   M  |   ,  |   .  |   /  | NUMPAD |
  * `--------+------+------+------+------+-------------'           `-------------+------+------+------+------+--------'
- *   |CAPSWD| PgUp | PgDn | LAlt |  SYM |                                       |  SYM | Left | Down |  Up  | Right|
+ *   |CPWD/`| PgUp | PgDn | LAlt |  SYM |                                       |  SYM | Left | Down |  Up  | Right|
  *   `----------------------------------'                                       `----------------------------------'
  *                                        ,-------------.       ,-------------.
  *                                        | WLOCK| Mute |       | Vol- | Vol+ |
@@ -90,8 +91,6 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
  *                                 |      |      | LGui |       | RGui |      |      |
  *                                 `--------------------'       `--------------------'
  * 
- * The upper-left key is normally Escape. Use GUI+key to generate a backtick.
- * Use Shift+key to generate a tilde.
  *
  * SYM key activates the symbols/special layer. Normally is only active while
  * held; press both SYM keys together to lock the layer. Press one SYM key
@@ -103,8 +102,10 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
  * key again to unlock the layer. When the mouse/numpad layer is locked, LED
  * 2 will be lit.
  *
- * CAPSWD activates "caps word" mode; letters will be capitalized and hyphens
- * changed to underlines until the space key is pressed.
+ * CPWD activates "caps word" mode; letters will be capitalized and hyphens
+ * changed to underlines until the space key is pressed. However if any
+ * modifier key is held (Ctrl, Alt, Shift, GUI) then this key will behave like
+ * the backtick/tilde key instead.
  *
  * WLOCK sends a macro (LGui-L) to lock the screen. This screen lock macro
  * works for Windows and various Linux setups; for macOS see the corresponding
@@ -117,14 +118,14 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
  */
     [_MAIN] = LAYOUT_ergodox(
         // left hand
-        QK_GESC,  KC_1,     KC_2,     KC_3,     KC_4,     KC_5,     KC_MINS,
+        KC_ESC,   KC_1,     KC_2,     KC_3,     KC_4,     KC_5,     KC_MINS,
         KC_TAB,   KC_Q,     KC_W,     KC_E,     KC_R,     KC_T,     JKC_SYS,
         KC_LCTL,  KC_A,     KC_S,     KC_D,     KC_F,     KC_G,
         JKC_MN_L, KC_Z,     KC_X,     KC_C,     KC_V,     KC_B,     JKC_SYS,
         JKC_CW,   KC_PGUP,  KC_PGDN,  KC_LALT,  JKC_SYM,
                                                           LGUI(KC_L), KC_MUTE,
                                                                     KC_HOME,
-                                                JKC_LTHM, KC_BSPC,  JKC_GUI_L,
+                                                JKC_LTHM, KC_BSPC,  KC_LGUI,
         // right hand
         KC_EQL,   KC_6,     KC_7,     KC_8,     KC_9,     KC_0,     KC_F11,
         KC_LBRC,  KC_Y,     KC_U,     KC_I,     KC_O,     KC_P,     KC_BSLS,
@@ -133,7 +134,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
                             JKC_SYM,  KC_LEFT,  KC_DOWN,  KC_UP,    KC_RGHT,
         KC_VOLD,  KC_VOLU,
         KC_END,
-        JKC_GUI_R, KC_ENT,  KC_SPC
+        KC_RGUI,  KC_ENT,  KC_SPC
     ),
 
 /* Keymap _SYMBOLS: symbols/special layer (mutually exclusive with _MOUSENUM)
@@ -245,7 +246,6 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 void matrix_init_user(void) {
     symbols_lock = false;
     mousenum_lock = false;
-    gui_chord = false;
     shooter_mode = false;
     shooter_left_shift_down = false;
     shooter_right_shift_down = false;
@@ -278,12 +278,18 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
             }
             return false; // Skip all further processing of this key
 
-        // This key normally activates Caps Word, but in "shooter mode" it is
-        // the backtick/tilde key.
+        // This key normally activates Caps Word, but in "shooter mode", or if
+        // any modified key is pressed, it is the backtick/tilde key.
         case JKC_CW:
             if (record->event.pressed) {
                 // Key Down
-                if (!shooter_mode) {
+                // Checking for modifier-key-pressed seems like a perfect
+                // usecase for key overrides at first glance. However, to
+                // preserve the modifier(s) in the resulting emitted key event
+                // would require defining at least 8 overrides that need to
+                // be cycled through and checked on each press. This is faster
+                // and simpler.
+                if ((get_mods() == 0) && !shooter_mode) {
                     caps_word_on();
                 } else {
                     register_code(KC_GRV);
@@ -387,11 +393,11 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
         // The GUI keys typically just emit left/right GUI key events.
         // However if both keys are pressed, and we're not on the mouse/numpad
         // layer, then additionally toggle "shooter mode".
-        case JKC_GUI_L:
-        case JKC_GUI_R:
+        case KC_LGUI:
+        case KC_RGUI:
             if (record->event.pressed) {
                 // Key Down
-                if (gui_chord) {
+                if ((get_mods() & MOD_MASK_GUI) != 0) {
                     // The other GUI key is already pressed. If we're not on
                     // the mouse/numpad layer, toggle shooter mode.
                     if (IS_LAYER_OFF(_MOUSENUM)) {
@@ -402,24 +408,9 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
                             ergodox_right_led_1_off();
                         }
                     }
-                } else {
-                    gui_chord = true;
-                }
-                if (keycode == JKC_GUI_L) {
-                    register_code(KC_LGUI);
-                } else {
-                    register_code(KC_RGUI);
-                }
-            } else {
-                // Key Up
-                gui_chord = false;
-                if (keycode == JKC_GUI_L) {
-                    unregister_code(KC_LGUI);
-                } else {
-                    unregister_code(KC_RGUI);
                 }
             }
-            return false; // Skip all further processing of this key
+            return true; // Go ahead and process this key
 
         // There should be two keys with this keycode assigned. If both are
         // depressed together, normally this will cause a string macro to be
