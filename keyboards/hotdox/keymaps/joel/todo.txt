@@ -1,3 +1,1 @@
-Caps Lock key doesn't work in the symbols/special layer. Thinking it might be because releasing the layer clears the capslock state maybe? On the other hand an online key tester seems to indicate that it's just sending a Ctrl key event. I never use caps lock so maybe the best "solution" is just to find something else to put on that key.
-
-Also... Caps Word feature doesn't seem to work on macOS?
+Caps Word feature doesn't seem to work on macOS? Problem with "weak mods"? Not sure this will help, but I can add caps word state to the SYS output, from is_caps_word_on().
