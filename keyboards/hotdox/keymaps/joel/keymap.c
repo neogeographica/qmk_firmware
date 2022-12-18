@@ -1,24 +1,35 @@
 #include QMK_KEYBOARD_H
 #include "version.h"
 
-bool symbols_lock;
-bool mousenum_lock;
-bool shooter_mode;
-bool shooter_left_shift_down;
-bool shooter_right_shift_down;
-bool shooter_grave_down;
-uint16_t lthumb_keycode;
-bool sys_chord;
-bool sys_chord_flash;
+#define ALT_TAB_TIMEOUT_MS 1500
+#define POWER_TIMEOUT_MS 1500
+
+bool mousenum_lock = false;
+bool shooter_mode = false;
+bool shooter_left_shift_down = false;
+bool shooter_right_shift_down = false;
+bool shooter_grave_down = false;
+bool sys_chord = false;
+bool sys_chord_flash = false;
+bool alt_tab_active = false;
+bool waiting_for_power_code= false;
+bool recording = false;
+
+uint16_t lthumb_keycode = KC_LSFT;
+uint16_t alt_tab_timer = 0;
+uint16_t power_timer = 0;
+uint8_t led_cycle = 0;
 
 enum custom_keycodes {
-    JKC_SYM = SAFE_RANGE,
+    JKC_ALT_TAB = SAFE_RANGE,
+    JKC_ALT_TICK,
     JKC_MN_L,
     JKC_MN_R,
     JKC_CW,
     JKC_LTHM,
     JKC_SYS,
-    JKC_SYSFL
+    JKC_SYSFL,
+    JKC_PWR
 };
 
 enum layers{
@@ -33,7 +44,7 @@ enum layers{
 // That one will be used for the "shooter mode" indicator.
 
 // LED 2 is in the middle and LED 3 is rightmost. I ended up using the
-// rightmost LED for _SYMBOLS lock and the middle LED for _MOUSENUM lock.
+// rightmost LED for macro recording and the middle LED for _MOUSENUM lock.
 
 
 // OK, let's define the keymaps for layers:
@@ -86,7 +97,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
  *                                        ,-------------.       ,-------------.
  *                                        | WLOCK| Mute |       | Vol- | Vol+ |
  *                                 ,------|------|------|       |------+------+------.
- *                                 |      |      | Home |       |  End |      |      |
+ *                                 |      |      |  M1  |       |  M2  |      |      |
  *                                 |LShift| Bksp |------|       |------| Enter| Space|
  *                                 |      |      | LGui |       | RGui |      |      |
  *                                 `--------------------'       `--------------------'
@@ -111,6 +122,8 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
  * works for Windows and various Linux setups; for macOS see the corresponding
  * key on the symbols/special layer.
  *
+ * The M1 and M2 keys play back dynamic macros 1 and 2 respectively.
+ *
  * Pressing the two SYS keys together will normally type out information about
  * the build and the currently active layers. If SYSFL is already held however
  * (by chording the SYM and NUMPAD keys), then pressing the two SYS keys will
@@ -122,18 +135,18 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
         KC_TAB,   KC_Q,     KC_W,     KC_E,     KC_R,     KC_T,     JKC_SYS,
         KC_LCTL,  KC_A,     KC_S,     KC_D,     KC_F,     KC_G,
         JKC_MN_L, KC_Z,     KC_X,     KC_C,     KC_V,     KC_B,     JKC_SYS,
-        JKC_CW,   KC_PGUP,  KC_PGDN,  KC_LALT,  JKC_SYM,
+        JKC_CW,   KC_PGUP,  KC_PGDN,  KC_LALT,  MO(_SYMBOLS),
                                                           LGUI(KC_L), KC_MUTE,
-                                                                    KC_HOME,
+                                                                    DM_PLY1,
                                                 JKC_LTHM, KC_BSPC,  KC_LGUI,
         // right hand
         KC_EQL,   KC_6,     KC_7,     KC_8,     KC_9,     KC_0,     KC_F11,
         KC_LBRC,  KC_Y,     KC_U,     KC_I,     KC_O,     KC_P,     KC_BSLS,
                   KC_H,     KC_J,     KC_K,     KC_L,     KC_SCLN,  KC_QUOT,
         KC_RBRC,  KC_N,     KC_M,     KC_COMM,  KC_DOT,   KC_SLSH,  JKC_MN_R,
-                            JKC_SYM,  KC_LEFT,  KC_DOWN,  KC_UP,    KC_RGHT,
+                            MO(_SYMBOLS), KC_LEFT, KC_DOWN, KC_UP,  KC_RGHT,
         KC_VOLD,  KC_VOLU,
-        KC_END,
+        DM_PLY2,
         KC_RGUI,  KC_ENT,  KC_SPC
     ),
 
@@ -150,47 +163,56 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
  * ,--------------------------------------------------.           ,--------------------------------------------------.
  * | Power  |  F1  |  F2  |  F3  |  F4  |  F5  | Sleep|           | Pause|  F6  |  F7  |  F8  |  F9  |  F10 |   F12  |
  * |--------+------+------+------+------+-------------|           |------+------+------+------+------+------+--------|
- * |        | Space|  Up  | Enter|   _  |   ~  |      |           |      |   "  |   +  |   |  |   {  |   }  |        |
+ * | AltTab | Space|  Up  | Enter|   _  |   ~  |      |           | PrSrc|   "  |   +  |   |  |   {  |   }  |  Null  |
  * |--------+------+------+------+------+------|      |           |      |------+------+------+------+------+--------|
- * |        | Left | Down | Right|   -  |   `  |------|           |------|   '  |   =  |   \  |   [  |   ]  |        |
- * |--------+------+------+------+------+------|      |           |      |------+------+------+------+------+--------|
+ * |        | Left | Down | Right|   -  |   `  |------|           |------|   '  |   =  |   \  |   [  |   ]  |  Null  |
+ * |--------+------+------+------+------+------|      |           |  Ins |------+------+------+------+------+--------|
  * |  SYSFL |   !  |   @  |   #  |   $  |   %  |      |           |      |   ^  |   &  |   *  |   (  |   )  |  SYSFL |
  * `--------+------+------+------+------+-------------'           `-------------+------+------+------+------+--------'
- *   |      |      |      |      |      |                                       |      |  <<  | Stop | Play |  >>  |
+ *   |AltGrv| Home |  End |      |      |                                       |      |  <<  | Stop | Play |  >>  |
  *   `----------------------------------'                                       `----------------------------------'
  *                                        ,-------------.       ,-------------.
  *                                        | MLOCK|      |       | Brt- | Brt+ |
  *                                 ,------|------|------|       |------+------+------.
- *                                 |      |      |  Ins |       | Prev |      |      |
- *                                 | Caps |  Del |------|       |------| Play | Next |
+ *                                 |      |      | RecM1|       | RecM2|      |      |
+ *                                 | Caps |  Del |------|       |------| Prev | Next |
  *                                 |      |      |      |       |      |      |      |
  *                                 `--------------------'       `--------------------'
  * 
+ * The POWER key needs to be held for 1.5 seconds to activate. LEDs will cycle
+ * during this timeout period.
+ *
  * MLOCK sends a macro (LCtl-LGui-Q) to lock the screen. This screen lock macro
  * works for macOS; for Windows and various Linux setups see the corresponding
  * key on the base layer.
+ *
+ * AltTab sends Alt-Tab; repeated presses continue to send Tab while holding
+ * Alt. AltGrv is similar for Alt-Backtick.
+ *
+ * The RecM1 and RecM2 keys start/stop recording of dynamic macros 1 and 2
+ * respectively. (Nested macros are not allowed.)
  *
  * SYSFL unlocks the keyboard-flashing combo; see base layer comments for more.
  */
     [_SYMBOLS] = LAYOUT_ergodox(
         // left hand
-        KC_PWR,   KC_F1,    KC_F2,    KC_F3,    KC_F4,    KC_F5,    KC_SLEP,
-        KC_TRNS,  KC_SPC,   KC_UP,    KC_ENT,   KC_UNDS,  KC_TILD,  KC_TRNS,
+        JKC_PWR,  KC_F1,    KC_F2,    KC_F3,    KC_F4,    KC_F5,    KC_SLEP,
+        JKC_ALT_TAB, KC_SPC,   KC_UP,    KC_ENT,   KC_UNDS,  KC_TILD,  KC_TRNS,
         KC_TRNS,  KC_LEFT,  KC_DOWN,  KC_RGHT,  KC_MINS,  KC_GRV,
         JKC_SYSFL,KC_EXLM,  KC_AT,    KC_HASH,  KC_DLR,   KC_PERC,  KC_TRNS,
-        KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,
+        JKC_ALT_TICK, KC_HOME,  KC_END,   KC_TRNS,  KC_TRNS,
                                                           LCTL(LGUI(KC_Q)), KC_TRNS,
-                                                                    KC_INS,
+                                                                    DM_REC1,
                                                 KC_CAPS,  KC_DEL,   KC_TRNS,
         // right hand
         KC_PAUS,  KC_F6,    KC_F7,    KC_F8,    KC_F9,    KC_F10,   KC_F12,
-        KC_TRNS,  KC_DQUO,  KC_PLUS,  KC_PIPE,  KC_LCBR,  KC_RCBR,  KC_TRNS,
-                  KC_QUOT,  KC_EQL,   KC_BSLS,  KC_LBRC,  KC_RBRC,  KC_TRNS,
-        KC_TRNS,  KC_CIRC,  KC_AMPR,  KC_ASTR,  KC_LPRN,  KC_RPRN,  JKC_SYSFL,
+        KC_PSCR,  KC_DQUO,  KC_PLUS,  KC_PIPE,  KC_LCBR,  KC_RCBR,  KC_NO,
+                  KC_QUOT,  KC_EQL,   KC_BSLS,  KC_LBRC,  KC_RBRC,  KC_NO,
+        KC_INS,   KC_CIRC,  KC_AMPR,  KC_ASTR,  KC_LPRN,  KC_RPRN,  JKC_SYSFL,
                             KC_TRNS,  KC_MRWD,  KC_MSTP,  KC_MPLY,  KC_MFFD,
         KC_BRID,  KC_BRIU,
-        KC_MPRV,
-        KC_TRNS,  KC_MPLY,  KC_MNXT
+        DM_REC2,
+        KC_TRNS,  KC_MPRV,  KC_MNXT
     ),
 
 /* Keymap _MOUSENUM: mouse/numpad layer (mutually exclusive with _SYMBOLS)
@@ -207,7 +229,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
  * |--------+------+------+------+------+------|      |           | Null |------+------+------+------+------+--------|
  * |        | Btn3 | Btn4 | Btn5 | Null | Null |      |           |      | Null |  KP1 |  KP2 |  KP3 |  KP= |        |
  * `--------+------+------+------+------+-------------'           `-------------+------+------+------+------+--------'
- *   |      |      |      |      | SYSFL|                                       | SYSFL|  KP0 |  KP. | KPEnt| Null |
+ *   | Null |      |      |      | SYSFL|                                       | SYSFL|  KP0 |  KP. | KPEnt| Null |
  *   `----------------------------------'                                       `----------------------------------'
  *                                        ,-------------.       ,-------------.
  *                                        |      |      |       |      |      |
@@ -225,7 +247,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
         KC_TRNS,  KC_BTN1,  KC_MS_U,  KC_BTN2,  KC_WH_U,  KC_NO,    KC_TRNS,
         KC_TRNS,  KC_MS_L,  KC_MS_D,  KC_MS_R,  KC_WH_D,  KC_NO,
         KC_TRNS,  KC_BTN3,  KC_BTN4,  KC_BTN5,  KC_NO,    KC_NO,    KC_TRNS,
-        KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,  JKC_SYSFL,
+        KC_NO,    KC_TRNS,  KC_TRNS,  KC_TRNS,  JKC_SYSFL,
                                                           KC_TRNS,  KC_TRNS,
                                                                     KC_TRNS,
                                                 KC_TRNS,  KC_TRNS,  KC_TRNS,
@@ -239,22 +261,6 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
         KC_TRNS,
         KC_TRNS,  KC_TRNS,  KC_P0)
 };
-
-// Make double-sure our state and the layer state agree that there are no
-// layers active on startup. Also behave as if none of the JKC_SYS keys are
-// currently depressed.
-void matrix_init_user(void) {
-    symbols_lock = false;
-    mousenum_lock = false;
-    shooter_mode = false;
-    shooter_left_shift_down = false;
-    shooter_right_shift_down = false;
-    shooter_grave_down = false;
-    lthumb_keycode = KC_LSFT;
-    sys_chord = false;
-    sys_chord_flash = false;
-    layer_clear();
-}
 
 // Our hook for special actions on key events. Currently this handles the
 // enable and lock behaviors for _SYMBOLS and _MOUSENUM, and the
@@ -279,7 +285,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
             return false; // Skip all further processing of this key
 
         // This key normally activates Caps Word, but in "shooter mode", or if
-        // any modified key is pressed, it is the backtick/tilde key.
+        // any modifier key is pressed, it is the backtick/tilde key.
         case JKC_CW:
             if (record->event.pressed) {
                 // Key Down
@@ -306,41 +312,38 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
             }
             return false; // Skip all further processing of this key
 
-        // For _SYMBOLS and _MOUSENUM control keys: It is assumed that there
-        // will be two of these (one each for left and right hand boards).
-        // Depressing a key will do a layer enable while the key is held.
-        // Simultaneously depressing both of the same kind of key will lock
-        // the layer on. If the layer is locked on, tap the same kind of key
-        // again to unlock.
-        case JKC_SYM:
+        // These keys send tab or backtick, but also on first press will
+        // register the alt keycode. matrix_scan_user will take care of
+        // releasing alt if these keys' layer is deactivated or if
+        // ALT_TAB_TIMEOUT_MS elapses w/o more presses of these keys.
+        case JKC_ALT_TAB:
+        case JKC_ALT_TICK:
             if (record->event.pressed) {
-                // Key Down
-                if (IS_LAYER_OFF(_SYMBOLS)) {
-                    // _SYMBOLS isn't on yet, so turn it on.
-                    layer_on(_SYMBOLS);
+                if (!alt_tab_active) {
+                    alt_tab_active = true;
+                    register_code(KC_LALT);
+                }
+                alt_tab_timer = timer_read();
+                if (keycode == JKC_ALT_TAB) {
+                    register_code(KC_TAB);
                 } else {
-                    // _SYMBOLS is already on. If symbols_lock is not true yet,
-                    // this is because we are pushing both control keys, so
-                    // set symbols_lock to true. Otherwise this means we are
-                    // pushing a control key AGAIN after locking, so unlock.
-                    symbols_lock = !symbols_lock;
-                    if (symbols_lock) {
-                        ergodox_right_led_3_on();
-                    } else {
-                        ergodox_right_led_3_off();
-                    }
+                    register_code(KC_GRV);
                 }
             } else {
-                // Key Up
-                if (!symbols_lock) {
-                    // If not locked, clear _SYMBOLS.
-                    layer_off(_SYMBOLS);
+                if (keycode == JKC_ALT_TAB) {
+                    unregister_code(KC_TAB);
+                } else {
+                    unregister_code(KC_GRV);
                 }
             }
             return false; // Skip all further processing of this key
 
-        // _MOUSENUM keys have an additional consideration; in "shooter mode"
-        // they simply act as left/right shift keys.
+        // It is assumed that there will be two _MOUSENUM control keys (one
+        // each for left and right hand boards). Depressing a key will do a
+        // layer enable while the key is held. Simultaneously depressing both
+        // of them lock the layer on. If the layer is locked on, tap the same
+        // kind of key again to unlock. Finally, an additional consideration:
+        // in "shooter mode" these control keys simply act as shift keys.
         case JKC_MN_L:
         case JKC_MN_R:
             if (record->event.pressed) {
@@ -431,9 +434,9 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
                     } else {
                         // Just do the normal sys chord behavior: dump info.
                         send_string_with_delay_P(PSTR(QMK_KEYBOARD "/" QMK_KEYMAP " @ " QMK_VERSION " locked layers/modes: "), 10);
-                        if (symbols_lock || mousenum_lock || shooter_mode) {
-                            if (symbols_lock) {
-                                send_string_with_delay_P(PSTR("SYMBOLS "), 10);
+                        if (recording || mousenum_lock || shooter_mode) {
+                            if (recording) {
+                                send_string_with_delay_P(PSTR("RECORDING "), 10);
                             }
                             if (mousenum_lock) {
                                 send_string_with_delay_P(PSTR("MOUSE/NUMPAD "), 10);
@@ -462,7 +465,88 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
             sys_chord_flash = record->event.pressed;
             return false; // Skip all further processing of this key
 
+        // For the power key, just record whether it is pressed and mark the
+        // start time. matrix_scan_user will send the actual power keycode if
+        // POWER_TIMEOUT_MS elapses while holding the key.
+        case JKC_PWR:
+            if (record->event.pressed) {
+                // Key Down
+                waiting_for_power_code = true;
+                power_timer = timer_read();
+                // Blank LEDs to prep for cycling.
+                ergodox_led_all_off();
+            } else {
+                // Key Up
+                if (!waiting_for_power_code) {
+                    // Only do key-up if matrix_scan_user did key-down.
+                    unregister_code(KC_PWR);
+                }
+                waiting_for_power_code = false;
+                // Reset the LEDs to non-cycling state.
+                ergodox_led_all_off();
+                if (shooter_mode) {
+                    ergodox_right_led_1_on();
+                }
+                if (mousenum_lock) {
+                    ergodox_right_led_2_on();
+                }
+                if (recording) {
+                    ergodox_right_led_3_on();
+                }
+            }
+            return false; // Skip all further processing of this key
+
         default:
             return true; // Process all other keycodes normally
     }
 }
+
+// Deactivate the alt-hold for the special Alt-Tab and Alt-Backtick keys if
+// necessary. Also send the power keycode if the power key has been held long
+// enough.
+void matrix_scan_user(void) {
+    if (alt_tab_active) {
+        if (IS_LAYER_OFF(_SYMBOLS) || (timer_elapsed(alt_tab_timer) > ALT_TAB_TIMEOUT_MS)) {
+            unregister_code(KC_LALT);
+            alt_tab_active = false;
+        }
+    }
+    if (waiting_for_power_code) {
+        if (timer_elapsed(power_timer) > POWER_TIMEOUT_MS) {
+            register_code(KC_PWR);
+            waiting_for_power_code = false;
+        } else {
+            switch (led_cycle) {
+                case 0:
+                    ergodox_right_led_3_off();
+                    ergodox_right_led_1_on();
+                    led_cycle++;
+                    break;
+                case 1:
+                    ergodox_right_led_1_off();
+                    ergodox_right_led_2_on();
+                    led_cycle++;
+                    break;
+                case 2:
+                    ergodox_right_led_2_off();
+                    ergodox_right_led_3_on();
+                    led_cycle = 0;
+                    break;
+            }
+            _delay_ms(50);
+        }
+    }
+}
+
+// When either macro starts recording, turn on the recording LED.
+void dynamic_macro_record_start_user(void) {
+    recording = true;
+    ergodox_right_led_3_on();
+}
+
+// When current macro recording stops, turn off the recording LED.
+void dynamic_macro_record_end_user(int8_t direction) {
+    recording = false;
+    ergodox_right_led_3_off();
+}
+
