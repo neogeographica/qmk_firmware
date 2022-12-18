@@ -127,7 +127,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
  * Pressing the two SYS keys together will normally type out information about
  * the build and the currently active layers. If SYSFL is already held however
  * (by chording the SYM and NUMPAD keys), then pressing the two SYS keys will
- * reset the keyboard for flashing. When SYSFL is held, LED 1 will be lit.
+ * reset the keyboard for flashing.
  */
     [_MAIN] = LAYOUT_ergodox(
         // left hand
