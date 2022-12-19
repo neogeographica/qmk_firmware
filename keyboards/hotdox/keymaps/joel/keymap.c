@@ -38,18 +38,29 @@ enum layers{
   _MOUSENUM
 };
 
-// Notes about LEDs:
-
-// LED 1 is closest to the USB cables, and separated a bit from the other two.
-// That one will be used for the "shooter mode" indicator.
-
-// LED 2 is in the middle and LED 3 is rightmost. I ended up using the
-// rightmost LED for macro recording and the middle LED for _MOUSENUM lock.
-
-
-// OK, let's define the keymaps for layers:
-
-const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
+/* Notes about LEDs:
+ *
+ * LED 1 is closest to the USB cables, and separated a bit from the other two.
+ * LED 2 is in the middle and LED 3 is rightmost.
+ *
+ * In my setup, LED 1 = red, 2 = green, 3 = blue.
+ *
+ * When the keyboard powers on, the LEDs quickly turn on in sequence, turn off
+ * in sequence, then all blink together once. (This is default hotdox firmware
+ * behavior.) 
+ *
+ * When the key combo is used to reset the keyboard for flashing, the LEDs all
+ * turn on briefly then off.
+ *
+ * When holding down the key combo for the "power" keycode, the LEDs cycle
+ * during the countdown until the power keycode is triggered.
+ *
+ * While "shooter mode" is enabled, the red LED is lit.
+ *
+ * While the mouse/numpad layer is locked, the green LED is lit.
+ *
+ * While a macro is being recorded, the blue LED is lit.
+ */
 
 /* Notes about "shooter mode":
  *
@@ -60,10 +71,10 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
  * exited in the same way.
  *
  * While shooter mode is enabled:
- * - The two keys in the NUMPAD positions on the keymap will instead act as
- *   left and right shift keys.
- * - The key in the LShift position will instead act as a spacebar.
- * - The key in the CPWD position will instead act as the backtick/tilde key.
+ * - The two keys in the NUMPAD positions on the keymap will act as left and
+ *   right shift keys.
+ * - The key in the LShift position will act as a spacebar.
+ * - The key in the CPWD position will act as the backtick/tilde key.
  *
  * The layer keymap descriptions below will not mention this; they describe
  * the keymap as it is when shooter mode is disabled.
@@ -72,6 +83,9 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
  * still be activated, locked, and deactivated while in shooter mode, but the
  * mouse/numpad layer cannot.
  */
+
+
+const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 
 /* Keymap _MAIN: default/base layer
  *
@@ -103,10 +117,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
  *                                 `--------------------'       `--------------------'
  * 
  *
- * SYM key activates the symbols/special layer. Normally is only active while
- * held; press both SYM keys together to lock the layer. Press one SYM key
- * again to unlock the layer. When the symbols/special layer is locked, LED 3
- * will be lit.
+ * SYM key activates the symbols/special layer while held.
  *
  * NUMPAD key activates the mouse/numpad layer. Normally is only active while
  * held; press both NUMPAD keys together to lock the layer. Press one NUMPAD
@@ -180,14 +191,16 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
  *                                 `--------------------'       `--------------------'
  * 
  * The POWER key needs to be held for 1.5 seconds to activate. LEDs will cycle
- * during this timeout period.
+ * during this period.
  *
  * MLOCK sends a macro (LCtl-LGui-Q) to lock the screen. This screen lock macro
  * works for macOS; for Windows and various Linux setups see the corresponding
  * key on the base layer.
  *
  * AltTab sends Alt-Tab; repeated presses continue to send Tab while holding
- * Alt. AltGrv is similar for Alt-Backtick.
+ * Alt. AltGrv is similar for Alt-Backtick. These are just to make the window
+ * cycling combos slightly more comfortable (using the SYS key instead of the
+ * Alt key as the modifier).
  *
  * The RecM1 and RecM2 keys start/stop recording of dynamic macros 1 and 2
  * respectively. (Nested macros are not allowed.)
