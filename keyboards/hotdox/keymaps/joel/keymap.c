@@ -4,11 +4,12 @@
  *
  * Move shift and enter to thumbs instead of pinkies.
  *
- * Shuffle modifier keys as necessary to make common combos comfortable.
+ * Shuffle modifier keys as necessary to make common combos comfortable. This
+ * needs to cover Windows, Linux, and macOS key combos that I use.
  *
  * Support typing numbers and symbols using the main three rows (with
  * modifiers), for reduced finger reach. This includes a standard numpad
- * layout.
+ * layout under the right hand.
  *
  * Support typing arrow, enter, and space characters with the left hand (using
  * modifiers) for when the right hand is on the mouse.
@@ -307,7 +308,8 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 };
 
 // Our hook for special actions on key events. Currently this handles the
-// enable and lock behaviors for _SYM and _MNUM, and the J_SYS/J_SYSFL keys.
+// custom J_* keycodes as well as the shooter-mode lock and unlock behavior
+// added to KC_LGUI and KC_RGUI.
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     switch (keycode) {
 
