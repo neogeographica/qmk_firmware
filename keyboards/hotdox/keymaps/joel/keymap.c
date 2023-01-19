@@ -23,14 +23,6 @@
  * Make it hard to hit "dangerous" keys/combos by accident.
  */
 
-/* Open issues:
- *
- * On the mouse/numpad layer, I'm not completely sure I want to override space
- * with KP0. Kind of nice to have a big 0 key, but I do already have another
- * KP0, and it might be handy to be able to type a space character while
- * still leaving this layer active.
- */
-
 /* Notes about LEDs:
  *
  * LED 1 is closest to the USB cables, and separated a bit from the other two.
@@ -169,8 +161,8 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
  *
  * Pressing the two SYS keys together will normally type out information about
  * the build and the currently active layers. If SYSFL is already held however
- * (by chording the SYM and MNUM keys), then pressing the two SYS keys will
- * reset the keyboard for flashing.
+ * (by pressing the left-hand SYM or MNUM key while the other layer is active),
+ * then pressing the two SYS keys will reset the keyboard for flashing.
  */
     [_MAIN] = LAYOUT_ergodox(
         // left hand
@@ -210,7 +202,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
  * |--------+------+------+------+------+------|      |           |      |------+------+------+------+------+--------|
  * |        | Left | Down | Right|   -  |   `  |------|           |------|   '  |   =  |   \  |   [  |   ]  |  Null  |
  * |--------+------+------+------+------+------|      |           |  Ins |------+------+------+------+------+--------|
- * |  SYSFL |   !  |   @  |   #  |   $  |   %  |      |           |      |   ^  |   &  |   *  |   (  |   )  |  SYSFL |
+ * |  SYSFL |   !  |   @  |   #  |   $  |   %  |      |           |      |   ^  |   &  |   *  |   (  |   )  |  Null  |
  * `--------+------+------+------+------+-------------'           `-------------+------+------+------+------+--------'
  *   |AltGrv| Home |  End |      |      |                                       |      |  <<  | Stop | Play |  >>  |
  *   `----------------------------------'                                       `----------------------------------'
@@ -253,7 +245,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
         KC_PAUS,  KC_F6,    KC_F7,    KC_F8,    KC_F9,    KC_F10,   KC_F12,
         KC_PSCR,  KC_DQUO,  KC_PLUS,  KC_PIPE,  KC_LCBR,  KC_RCBR,  KC_NO,
                   KC_QUOT,  KC_EQL,   KC_BSLS,  KC_LBRC,  KC_RBRC,  KC_NO,
-        KC_INS,   KC_CIRC,  KC_AMPR,  KC_ASTR,  KC_LPRN,  KC_RPRN,  J_SYSFL,
+        KC_INS,   KC_CIRC,  KC_AMPR,  KC_ASTR,  KC_LPRN,  KC_RPRN,  KC_NO,
                             KC_TRNS,  KC_MRWD,  KC_MSTP,  KC_MPLY,  KC_MFFD,
         KC_BRID,  KC_BRIU,
         DM_REC2,
@@ -266,21 +258,21 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
  * - right hand keys for numpad
  *
  * ,--------------------------------------------------.           ,--------------------------------------------------.
- * |        | Null | Null | Null | Null | Null | Null |           | Null | Null |NumLck|  KP/ |  KP* |  KP- |  Null  |
+ * |        | Null | Null | Null | Null | Null | Null |           | Null | Null |  KP= |  KP/ |  KP* |  KP- | NumLck |
  * |--------+------+------+------+------+-------------|           |------+------+------+------+------+------+--------|
- * |        |LClick| MsUp |RClick| WhUp | Null |      |           | Null | Null |  KP7 |  KP8 |  KP9 |  KP+ |  Null  |
+ * |        |LClick| MsUp |RClick| WhUp | Null |      |           | Null | Null |  KP7 |  KP8 |  KP9 |  KP+ |   Tab  |
  * |--------+------+------+------+------+------|      |           |      |------+------+------+------+------+--------|
- * |        |MsLeft|MsDown|MsRght|WhDown| Null |------|           |------| Null |  KP4 |  KP5 |  KP6 |  KP, |  Null  |
+ * |        |MsLeft|MsDown|MsRght|WhDown| Null |------|           |------| Null |  KP4 |  KP5 |  KP6 |  KP+ |  Bksp  |
  * |--------+------+------+------+------+------|      |           | Null |------+------+------+------+------+--------|
- * |        | Btn3 | Btn4 | Btn5 | Null | Null |      |           |      | Null |  KP1 |  KP2 |  KP3 |  KP= |        |
+ * |        | Btn3 | Btn4 | Btn5 | Null | Null |      |           |      | Null |  KP1 |  KP2 |  KP3 | KPEnt|        |
  * `--------+------+------+------+------+-------------'           `-------------+------+------+------+------+--------'
- *   | Null |      |      |      | SYSFL|                                       | SYSFL|  KP0 |  KP. | KPEnt| Null |
+ *   | Null |      |      |      | SYSFL|                                       |  KP0 |  KP0 |  KP. | KPEnt| Null |
  *   `----------------------------------'                                       `----------------------------------'
  *                                        ,-------------.       ,-------------.
  *                                        |      |      |       |      |      |
  *                                 ,------|------|------|       |------+------+------.
  *                                 |      |      |      |       |      |      |      |
- *                                 |      |      |------|       |------|      |  KP0 |
+ *                                 |      |      |------|       |------|      |      |
  *                                 |      |      |      |       |      |      |      |
  *                                 `--------------------'       `--------------------'
  *
@@ -297,14 +289,14 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
                                                                     KC_TRNS,
                                                 KC_TRNS,  KC_TRNS,  KC_TRNS,
         // right hand
-        KC_NO,    KC_NO,    KC_NUM,   KC_PSLS,  KC_PAST,  KC_PMNS,  KC_NO,
-        KC_NO,    KC_NO,    KC_P7,    KC_P8,    KC_P9,    KC_PPLS,  KC_NO,
-                  KC_NO,    KC_P4,    KC_P5,    KC_P6,    KC_PCMM,  KC_NO,
-        KC_NO,    KC_NO,    KC_P1,    KC_P2,    KC_P3,    KC_PEQL,  KC_TRNS,
-                            J_SYSFL,  KC_P0,    KC_PDOT,  KC_PENT,  KC_NO,
+        KC_NO,    KC_NO,    KC_PEQL,  KC_PSLS,  KC_PAST,  KC_PMNS,  KC_NUM,
+        KC_NO,    KC_NO,    KC_P7,    KC_P8,    KC_P9,    KC_PPLS,  KC_TAB,
+                  KC_NO,    KC_P4,    KC_P5,    KC_P6,    KC_PPLS,  KC_BSPC,
+        KC_NO,    KC_NO,    KC_P1,    KC_P2,    KC_P3,    KC_PENT,  KC_TRNS,
+                            KC_P0,    KC_P0,    KC_PDOT,  KC_PENT,  KC_NO,
         KC_TRNS,  KC_TRNS,
         KC_TRNS,
-        KC_TRNS,  KC_TRNS,  KC_P0)
+        KC_TRNS,  KC_TRNS,  KC_TRNS)
 };
 
 // Our hook for special actions on key events. Currently this handles the
