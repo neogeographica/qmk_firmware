@@ -51,22 +51,13 @@
  *
  * This is a mode to make the lefthand keyboard a bit nicer for FPS games.
  *
- * Shooter mode can be entered as long as the mouse/numpad layer is not
- * currently active, by pressing both GUI keys simultaneously. It can be
- * exited in the same way.
+ * Shooter mode can be entered by pressing both GUI keys simultaneously. It
+ * can be exited in the same way.
  *
- * While shooter mode is enabled:
- * - The two keys in the MNUM positions on the keymap will act as left and
- *   right shift keys.
- * - The key in the LShift position will act as a spacebar.
- * - The key in the CPWD position will act as the backtick/tilde key.
- *
- * The layer keymap descriptions below will not mention this; they describe
- * the keymap as it is when shooter mode is disabled.
- *
- * An implication of this arrangement is that the symbols/special layer can
- * still be activated, locked, and deactivated while in shooter mode, but the
- * mouse/numpad layer cannot.
+ * Entering shooter mode while the mouse/numpad layer is active will deactivate
+ * the mouse/numpad layer. The symbols/special layer can still be activated,
+ * locked, and deactivated while in shooter mode, but the mouse/numpad layer
+ * cannot.
  */
 
 #include QMK_KEYBOARD_H
@@ -76,17 +67,13 @@
 #define POWER_TIMEOUT_MS 1500
 
 bool mousenum_lock = false;
-bool shooter_mode = false;
-bool shooter_left_shift_down = false;
-bool shooter_right_shift_down = false;
-bool shooter_grave_down = false;
+bool grave_down = false;
 bool sys_chord = false;
 bool sys_chord_flash = false;
 bool alt_tab_active = false;
 bool waiting_for_power_code= false;
 bool recording = false;
 
-uint16_t lthumb_keycode = KC_LSFT;
 uint16_t alt_tab_timer = 0;
 uint16_t power_timer = 0;
 uint8_t led_cycle = 0;
@@ -97,7 +84,6 @@ enum custom_keycodes {
     J_MN_L,
     J_MN_R,
     J_CW,
-    J_LTHM,
     J_SYS,
     J_SYSFL,
     J_PWR
@@ -106,7 +92,8 @@ enum custom_keycodes {
 enum layers{
   _MAIN = 0,
   _SYM,
-  _MNUM
+  _MNUM,
+  _FPS
 };
 
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
@@ -173,7 +160,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
         J_CW,     KC_PGUP,  KC_PGDN,  KC_LALT,  MO(_SYM),
                                                           LGUI(KC_L), KC_MUTE,
                                                                     DM_PLY1,
-                                                J_LTHM,   KC_BSPC,  KC_LGUI,
+                                                KC_LSFT,  KC_BSPC,  KC_LGUI,
         // right hand
         KC_EQL,   KC_6,     KC_7,     KC_8,     KC_9,     KC_0,     KC_F11,
         KC_LBRC,  KC_Y,     KC_U,     KC_I,     KC_O,     KC_P,     KC_BSLS,
@@ -296,6 +283,54 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
                             KC_P0,    KC_P0,    KC_PDOT,  KC_PENT,  KC_NO,
         KC_TRNS,  KC_TRNS,
         KC_TRNS,
+        KC_TRNS,  KC_TRNS,  KC_TRNS),
+
+/* Keymap _FPS: "shooter mode" layer (mutually exclusive with _MNUM)
+ *
+ * - some left-hand keys remapped for more normal FPS key bindings
+ * - left and right MNUM-layer keys replaced by left and right shift
+ *
+ * ,--------------------------------------------------. 
+ * |        |      |      |      |      |      |      |
+ * |--------+------+------+------+------+-------------|
+ * |    `   |      |      |      |      |      |      |
+ * |--------+------+------+------+------+------|      |
+ * |   Tab  |      |      |      |      |      |------|
+ * |--------+------+------+------+------+------|      |
+ * | LShift |      |      |      |      |      |      |
+ * `--------+------+------+------+------+-------------'
+ *   | LCtrl|      |      |      |      |
+ *   `----------------------------------'
+ *
+ *                                        ,-------------.
+ *                                        |      |      |
+ *                                 ,------|------|------|
+ *                                 |      |      |      |
+ *                                 | Space|      |------|
+ *                                 |      |      |      |
+ *                                 `--------------------'
+ *
+ * All other keys transparent, except RShift in the corresponding position on
+ * the other hand.
+ */
+    [_FPS] = LAYOUT_ergodox(
+        // left hand
+        KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,
+        KC_GRV,   KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,
+        KC_TAB,   KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,
+        KC_LSFT,  KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,
+        KC_LCTL,  KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,
+                                                          KC_TRNS,  KC_TRNS,
+                                                                    KC_TRNS,
+                                                KC_SPC,   KC_TRNS,  KC_TRNS,
+        // right hand
+        KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,
+        KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,
+                  KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,
+        KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_RSFT,
+                            KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,
+        KC_TRNS,  KC_TRNS,
+        KC_TRNS,
         KC_TRNS,  KC_TRNS,  KC_TRNS)
 };
 
@@ -305,24 +340,8 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     switch (keycode) {
 
-        // This key normally acts as left shift, but in "shooter mode" it is
-        // a spacebar.
-        case J_LTHM:
-            if (record->event.pressed) {
-                // Key Down
-                if (!shooter_mode) {
-                    lthumb_keycode = KC_LSFT;
-                } else {
-                    lthumb_keycode = KC_SPC;
-                }
-                register_code(lthumb_keycode);
-            } else {
-                unregister_code(lthumb_keycode);
-            }
-            return false; // Skip all further processing of this key
-
-        // This key normally activates Caps Word, but in "shooter mode", or if
-        // any modifier key is pressed, it is the backtick/tilde key.
+        // This key normally activates Caps Word, but if any modifier key is
+        // pressed, it is the backtick/tilde key.
         case J_CW:
             if (record->event.pressed) {
                 // Key Down
@@ -332,19 +351,19 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
                 // would require defining at least 8 overrides that need to
                 // be cycled through and checked on each press. This is faster
                 // and simpler.
-                if ((get_mods() == 0) && !shooter_mode) {
+                if (get_mods() == 0) {
                     caps_word_on();
                 } else {
                     register_code(KC_GRV);
-                    shooter_grave_down = true;
+                    grave_down = true;
                 }
             } else {
                 // Key Up
-                if (shooter_grave_down) {
+                if (grave_down) {
                     // Key was pressed as a backtick/tilde key, so should
                     // release that now.
                     unregister_code(KC_GRV);
-                    shooter_grave_down = false;
+                    grave_down = false;
                 }
             }
             return false; // Skip all further processing of this key
@@ -379,22 +398,12 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
         // for left and right hand boards). Depressing a key will do a layer
         // enable while the key is held. Simultaneously depressing both of
         // them locks the layer on. If the layer is locked on, tap the same
-        // kind of key again to unlock. Finally, an additional consideration:
-        // in "shooter mode" these control keys simply act as shift keys.
+        // kind of key again to unlock.
         case J_MN_L:
         case J_MN_R:
             if (record->event.pressed) {
                 // Key Down
-                if (shooter_mode) {
-                    // Treat as shift key.
-                    if (keycode == J_MN_L) {
-                        register_code(KC_LSFT);
-                        shooter_left_shift_down = true;
-                    } else {
-                        register_code(KC_RSFT);
-                        shooter_right_shift_down = true;
-                    }
-                } else if (IS_LAYER_OFF(_MNUM)) {
+                if (IS_LAYER_OFF(_MNUM)) {
                     // _MNUM isn't on yet, so turn it on.
                     layer_on(_MNUM);
                 } else {
@@ -408,24 +417,9 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
                 }
             } else {
                 // Key Up
-                if (keycode == J_MN_L) {
-                    if (shooter_left_shift_down) {
-                        // Key was pressed as a shift key, so should un-shift now.
-                        unregister_code(KC_LSFT);
-                        shooter_left_shift_down = false;
-                    } else if (!mousenum_lock) {
-                        // If not locked, clear _MNUM.
-                        layer_off(_MNUM);
-                    }
-                }
-                else {
-                    // Same as above for other key.
-                    if (shooter_right_shift_down) {
-                        unregister_code(KC_RSFT);
-                        shooter_right_shift_down = false;
-                    } else if (!mousenum_lock) {
-                        layer_off(_MNUM);
-                    }
+                if (!mousenum_lock) {
+                    // If not locked, clear _MNUM.
+                    layer_off(_MNUM);
                 }
             }
             return false; // Skip all further processing of this key
@@ -438,15 +432,21 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
             if (record->event.pressed) {
                 // Key Down
                 if ((get_mods() & MOD_MASK_GUI) != 0) {
-                    // The other GUI key is already pressed. If we're not on
-                    // the mouse/numpad layer, toggle shooter mode.
-                    if (IS_LAYER_OFF(_MNUM)) {
-                        shooter_mode = !shooter_mode;
-                        if (shooter_mode) {
-                            ergodox_right_led_1_on();
-                        } else {
-                            ergodox_right_led_1_off();
+                    // The other GUI key is already pressed. Toggle shooter
+                    // mode.
+                    if (IS_LAYER_OFF(_FPS)) {
+                        if (IS_LAYER_ON(_MNUM)) {
+                            if (mousenum_lock) {
+                                mousenum_lock = false;
+                                ergodox_right_led_2_off();
+                            }
+                            layer_off(_MNUM);
                         }
+                        layer_on(_FPS);
+                        ergodox_right_led_1_on();
+                    } else {
+                        layer_off(_FPS);
+                        ergodox_right_led_1_off();
                     }
                 }
             }
@@ -470,6 +470,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
                         reset_keyboard();
                     } else {
                         // Just do the normal sys chord behavior: dump info.
+                        bool shooter_mode = IS_LAYER_ON(_FPS);
                         send_string_with_delay_P(PSTR(QMK_KEYBOARD "/" QMK_KEYMAP " @ " QMK_VERSION " locked layers/modes: "), 10);
                         if (recording || mousenum_lock || shooter_mode) {
                             if (recording) {
@@ -521,7 +522,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
                 waiting_for_power_code = false;
                 // Reset the LEDs to non-cycling state.
                 ergodox_led_all_off();
-                if (shooter_mode) {
+                if (IS_LAYER_ON(_FPS)) {
                     ergodox_right_led_1_on();
                 }
                 if (mousenum_lock) {
