@@ -23,6 +23,19 @@
  * Make it hard to hit "dangerous" keys/combos by accident.
  */
 
+/* Notes about "shooter mode":
+ *
+ * This is a mode to make the lefthand keyboard a bit nicer for FPS games.
+ *
+ * Shooter mode can be entered by pressing both GUI keys simultaneously. It
+ * can be exited in the same way.
+ *
+ * Entering shooter mode while the mouse/numpad layer is active will deactivate
+ * the mouse/numpad layer. The symbols/special layer can still be activated,
+ * locked, and deactivated while in shooter mode, but the mouse/numpad layer
+ * cannot.
+ */
+
 /* Notes about LEDs:
  *
  * LED 1 is closest to the USB cables, and separated a bit from the other two.
@@ -45,19 +58,6 @@
  * While the mouse/numpad layer is locked, the green LED (#2) is lit.
  *
  * While a macro is being recorded, the blue LED (#3) is lit.
- */
-
-/* Notes about "shooter mode":
- *
- * This is a mode to make the lefthand keyboard a bit nicer for FPS games.
- *
- * Shooter mode can be entered by pressing both GUI keys simultaneously. It
- * can be exited in the same way.
- *
- * Entering shooter mode while the mouse/numpad layer is active will deactivate
- * the mouse/numpad layer. The symbols/special layer can still be activated,
- * locked, and deactivated while in shooter mode, but the mouse/numpad layer
- * cannot.
  */
 
 #include QMK_KEYBOARD_H
@@ -287,7 +287,8 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 
 /* Keymap _FPS: "shooter mode" layer (mutually exclusive with _MNUM)
  *
- * - some left-hand keys remapped for more normal FPS key bindings
+ * - enable or disable by pressing both GUI keys
+ * - some left-hand keys remapped to serve normal FPS key bindings
  * - left and right MNUM-layer keys replaced by left and right shift
  *
  * ,--------------------------------------------------. 
