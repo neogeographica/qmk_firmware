@@ -50,8 +50,8 @@
  * When the key combo is used to reset the keyboard for flashing, the LEDs all
  * turn on briefly then off.
  *
- * When holding down the key combo for the "power" keycode, the LEDs cycle
- * during the countdown until the power keycode is triggered.
+ * When holding down the key combo for the "power" or "sleep" keycode, the
+ * LEDs cycle during the countdown until the keycode is triggered.
  *
  * While "shooter mode" is enabled, the red LED (#1) is lit.
  *
@@ -72,10 +72,12 @@ bool sys_chord = false;
 bool sys_chord_flash = false;
 bool alt_tab_active = false;
 bool waiting_for_power_code= false;
+bool waiting_for_sleep_code= false;
 bool recording = false;
 
 uint16_t alt_tab_timer = 0;
 uint16_t power_timer = 0;
+uint16_t sleep_timer = 0;
 uint8_t led_cycle = 0;
 
 enum custom_keycodes {
@@ -86,7 +88,8 @@ enum custom_keycodes {
     J_CW,
     J_SYS,
     J_SYSFL,
-    J_PWR
+    J_PWR,
+    J_SLEP
 };
 
 enum layers{
@@ -201,8 +204,8 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
  *                                 |      |      |      |       |      |      |      |
  *                                 `--------------------'       `--------------------'
  * 
- * The POWER key needs to be held for 1.5 seconds to activate. LEDs will cycle
- * during this period.
+ * The POWER or SLEEP key needs to be held for 1.5 seconds to activate. LEDs
+ * will cycle during this period.
  *
  * MLOCK sends a macro (LCtl-LGui-Q) to lock the screen. This screen lock macro
  * works for macOS; for Windows and various Linux setups see the corresponding
@@ -220,7 +223,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
  */
     [_SYM] = LAYOUT_ergodox(
         // left hand
-        J_PWR,    KC_F1,    KC_F2,    KC_F3,    KC_F4,    KC_F5,    KC_SLEP,
+        J_PWR,    KC_F1,    KC_F2,    KC_F3,    KC_F4,    KC_F5,    J_SLEP,
         J_ALT_TAB, KC_SPC,  KC_UP,    KC_ENT,   KC_UNDS,  KC_TILD,  KC_TRNS,
         KC_TRNS,  KC_LEFT,  KC_DOWN,  KC_RGHT,  KC_MINS,  KC_GRV,
         J_SYSFL,  KC_EXLM,  KC_AT,    KC_HASH,  KC_DLR,   KC_PERC,  KC_TRNS,
@@ -334,6 +337,21 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
         KC_TRNS,
         KC_TRNS,  KC_TRNS,  KC_TRNS)
 };
+
+// Set LEDs according to current state. Used to recover after an LED-cycling
+// behavior.
+void reset_leds(void) {
+    ergodox_led_all_off();
+    if (IS_LAYER_ON(_FPS)) {
+        ergodox_right_led_1_on();
+    }
+    if (mousenum_lock) {
+        ergodox_right_led_2_on();
+    }
+    if (recording) {
+        ergodox_right_led_3_on();
+    }
+}
 
 // Our hook for special actions on key events. Currently this handles the
 // custom J_* keycodes as well as the shooter-mode lock and unlock behavior
@@ -504,9 +522,9 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
             sys_chord_flash = record->event.pressed;
             return false; // Skip all further processing of this key
 
-        // For the power key, just record whether it is pressed and mark the
-        // start time. matrix_scan_user will send the actual power keycode if
-        // POWER_TIMEOUT_MS elapses while holding the key.
+        // For the power or sleep key, just record whether it is pressed and
+        // mark the start time. matrix_scan_user will send the actual power or
+        // sleep keycode if POWER_TIMEOUT_MS elapses while holding the key.
         case J_PWR:
             if (record->event.pressed) {
                 // Key Down
@@ -522,16 +540,25 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
                 }
                 waiting_for_power_code = false;
                 // Reset the LEDs to non-cycling state.
+                reset_leds();
+            }
+            return false; // Skip all further processing of this key
+        case J_SLEP:
+            if (record->event.pressed) {
+                // Key Down
+                waiting_for_sleep_code = true;
+                sleep_timer = timer_read();
+                // Blank LEDs to prep for cycling.
                 ergodox_led_all_off();
-                if (IS_LAYER_ON(_FPS)) {
-                    ergodox_right_led_1_on();
+            } else {
+                // Key Up
+                if (!waiting_for_sleep_code) {
+                    // Only do key-up if matrix_scan_user did key-down.
+                    unregister_code(KC_SLEP);
                 }
-                if (mousenum_lock) {
-                    ergodox_right_led_2_on();
-                }
-                if (recording) {
-                    ergodox_right_led_3_on();
-                }
+                waiting_for_sleep_code = false;
+                // Reset the LEDs to non-cycling state.
+                reset_leds();
             }
             return false; // Skip all further processing of this key
 
@@ -541,8 +568,8 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 }
 
 // Deactivate the alt-hold for the special Alt-Tab and Alt-Backtick keys if
-// necessary. Also send the power keycode if the power key has been held long
-// enough.
+// necessary. Also send the power or sleep keycode if the relevant key has
+// been held long enough.
 void matrix_scan_user(void) {
     if (alt_tab_active) {
         if (IS_LAYER_OFF(_SYM) || (timer_elapsed(alt_tab_timer) > ALT_TAB_TIMEOUT_MS)) {
@@ -554,26 +581,33 @@ void matrix_scan_user(void) {
         if (timer_elapsed(power_timer) > POWER_TIMEOUT_MS) {
             register_code(KC_PWR);
             waiting_for_power_code = false;
-        } else {
-            switch (led_cycle) {
-                case 0:
-                    ergodox_right_led_3_off();
-                    ergodox_right_led_1_on();
-                    led_cycle++;
-                    break;
-                case 1:
-                    ergodox_right_led_1_off();
-                    ergodox_right_led_2_on();
-                    led_cycle++;
-                    break;
-                case 2:
-                    ergodox_right_led_2_off();
-                    ergodox_right_led_3_on();
-                    led_cycle = 0;
-                    break;
-            }
-            _delay_ms(50);
         }
+    }
+    if (waiting_for_sleep_code) {
+        if (timer_elapsed(sleep_timer) > POWER_TIMEOUT_MS) {
+            register_code(KC_SLEP);
+            waiting_for_sleep_code = false;
+        }
+    }
+    if (waiting_for_power_code || waiting_for_sleep_code) {
+        switch (led_cycle) {
+            case 0:
+                ergodox_right_led_3_off();
+                ergodox_right_led_1_on();
+                led_cycle++;
+                break;
+            case 1:
+                ergodox_right_led_1_off();
+                ergodox_right_led_2_on();
+                led_cycle++;
+                break;
+            case 2:
+                ergodox_right_led_2_off();
+                ergodox_right_led_3_on();
+                led_cycle = 0;
+                break;
+        }
+        _delay_ms(50);
     }
 }
 
