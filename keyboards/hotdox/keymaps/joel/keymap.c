@@ -104,7 +104,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 /* Keymap _MAIN: default/base layer
  *
  * - alphanum keys in "normal" QWERTY positions, plus some other symbol keys
- * - ergodox-ish thumb key placement for shift, enter, space, backspace
+ * - Ergodox-ish thumb key placement for shift, enter, space, backspace
  * - common thumb/pinky modifier keys where I like them
  * - clusters of cursor-movement keys
  * - keys to activate or lock other layers
@@ -213,7 +213,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
  *
  * AltTab sends Alt-Tab; repeated presses continue to send Tab while holding
  * Alt. AltGrv is similar for Alt-Backtick. These are just to make the window
- * cycling combos slightly more comfortable (using the SYS key instead of the
+ * cycling combos slightly more comfortable (using the SYM key instead of the
  * Alt key as the modifier).
  *
  * The RecM1 and RecM2 keys start/stop recording of dynamic macros 1 and 2
@@ -444,8 +444,8 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
             return false; // Skip all further processing of this key
 
         // The GUI keys typically just emit left/right GUI key events.
-        // However if both keys are pressed, and we're not on the mouse/numpad
-        // layer, then additionally toggle "shooter mode".
+        // However if both keys are pressed, toggle "shooter mode". (Turning
+        // on shooter mode will disable the mouse/numpad layer if it is on.)
         case KC_LGUI:
         case KC_RGUI:
             if (record->event.pressed) {
