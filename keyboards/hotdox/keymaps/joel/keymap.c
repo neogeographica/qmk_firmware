@@ -25,15 +25,21 @@
 
 /* Notes about "shooter mode":
  *
- * This is a mode to make the lefthand keyboard a bit nicer for FPS games.
+ * This is a mode to make the lefthand keyboard a bit nicer for mouse-and-
+ * keyboard games, especially "first person shooters".
  *
- * Shooter mode can be entered by pressing both GUI keys simultaneously. It
- * can be exited in the same way.
+ * Shooter mode can be entered or exited by pressing both GUI keys
+ * simultaneously.
  *
  * Entering shooter mode while the mouse/numpad layer is active will deactivate
  * the mouse/numpad layer. The symbols/special layer can still be activated,
  * locked, and deactivated while in shooter mode, but the mouse/numpad layer
  * cannot.
+ *
+ * While in shooter mode, the left GUI key can be held to remap some of the
+ * left-hand keys to right-hand keys. 1-5 become 6-0, Q-T become F6-F10, and
+ * the top/bottom SYS keys become F11/F12. It does not perform its usual
+ * left-GUI keycode. (The right GUI key still behaves normally.)
  */
 
 /* Notes about LEDs:
@@ -96,7 +102,8 @@ enum layers{
   _MAIN = 0,
   _SYM,
   _MNUM,
-  _FPS
+  _FPS,
+  _FPS2
 };
 
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
@@ -293,6 +300,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
  * - enable or disable by pressing both GUI keys
  * - some left-hand keys remapped to serve normal FPS key bindings
  * - left and right MNUM-layer keys replaced by left and right shift
+ * - hold left GUI to overlay the _FPS2 keymap
  *
  * ,--------------------------------------------------. 
  * |        |      |      |      |      |      |      |
@@ -311,7 +319,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
  *                                 ,------|------|------|
  *                                 |      |      |      |
  *                                 | Space|      |------|
- *                                 |      |      |      |
+ *                                 |      |      | FPS2 |
  *                                 `--------------------'
  *
  * All other keys transparent, except RShift in the corresponding position on
@@ -332,6 +340,54 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
         KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,
                   KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,
         KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_RSFT,
+                            KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,
+        KC_TRNS,  KC_TRNS,
+        KC_TRNS,
+        KC_TRNS,  KC_TRNS,  KC_TRNS),
+
+/* Keymap _FPS2: some right-hand keys overlaid on "shooter mode" layer
+ *
+ * - 1-5 mapped to 6-0
+ * - Q-T mapped to F6-F10
+ * - top/bottom SYS keys mapped to F11/F12
+ *
+ * ,--------------------------------------------------. 
+ * |        |   6  |   7  |   8  |   9  |   0  |      |
+ * |--------+------+------+------+------+-------------|
+ * |    `   |  F6  |  F7  |  F8  |  F9  |  F10 |  F11 |
+ * |--------+------+------+------+------+------|      |
+ * |        |      |      |      |      |      |------|
+ * |--------+------+------+------+------+------|  F12 |
+ * |        |      |      |      |      |      |      |
+ * `--------+------+------+------+------+-------------'
+ *   |      |      |      |      |      |
+ *   `----------------------------------'
+ *
+ *                                        ,-------------.
+ *                                        |      |      |
+ *                                 ,------|------|------|
+ *                                 |      |      |      |
+ *                                 |      |      |------|
+ *                                 |      |      |      |
+ *                                 `--------------------'
+ *
+ * All other keys transparent.
+ */
+    [_FPS2] = LAYOUT_ergodox(
+        // left hand
+        KC_TRNS,  KC_6,     KC_7,     KC_8,     KC_9,     KC_0,     KC_TRNS,
+        KC_TRNS,  KC_F6,    KC_F7,    KC_F8,    KC_F9,    KC_F10,   KC_F11,
+        KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,
+        KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_F12,
+        KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,
+                                                          KC_TRNS,  KC_TRNS,
+                                                                    KC_TRNS,
+                                                KC_TRNS,  KC_TRNS,  KC_TRNS,
+        // right hand
+        KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,
+        KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,
+                  KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,
+        KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,
                             KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,
         KC_TRNS,  KC_TRNS,
         KC_TRNS,
@@ -444,32 +500,73 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
             return false; // Skip all further processing of this key
 
         // The GUI keys typically just emit left/right GUI key events.
-        // However if both keys are pressed, toggle "shooter mode". (Turning
-        // on shooter mode will disable the mouse/numpad layer if it is on.)
+        // However if both keys are pressed, toggle "shooter mode". (Enabling
+        // shooter mode will disable the mouse/numpad layer if it is on.)
+        // While shooter mode is enabled, left GUI serves to activate the
+        // _FPS2 overlay instead of sending its usual code.
         case KC_LGUI:
         case KC_RGUI:
-            if (record->event.pressed) {
-                // Key Down
-                if ((get_mods() & MOD_MASK_GUI) != 0) {
-                    // The other GUI key is already pressed. Toggle shooter
-                    // mode.
-                    if (IS_LAYER_OFF(_FPS)) {
-                        if (IS_LAYER_ON(_MNUM)) {
-                            if (mousenum_lock) {
-                                mousenum_lock = false;
-                                ergodox_right_led_2_off();
-                            }
-                            layer_off(_MNUM);
-                        }
-                        layer_on(_FPS);
-                        ergodox_right_led_1_on();
+            {
+                uint8_t mod_state = get_mods();
+                bool process_key = true;
+                if (record->event.pressed) {
+                    // Key Down
+                    bool both_pressed = false;
+                    if ((mod_state & MOD_MASK_GUI) != 0) {
+                        // This covers the both-pressed state while FPS mode
+                        // is disabled, as well as LGUI-after-RGUI while FPS
+                        // mode is enabled.
+                        both_pressed = true;
                     } else {
-                        layer_off(_FPS);
-                        ergodox_right_led_1_off();
+                        if ((keycode == KC_RGUI) && IS_LAYER_ON(_FPS2)) {
+                            // RGUI-after-LGUI while FPS mode is enabled.
+                            both_pressed = true;
+                            // For symmetry, we won't send RGUI keycode for
+                            // this combo since we didn't send LGUI.
+                            process_key = false;
+                        }
+                    }
+                    if (both_pressed) {
+                        // Toggle shooter mode.
+                        if (IS_LAYER_OFF(_FPS)) {
+                            if (IS_LAYER_ON(_MNUM)) {
+                                if (mousenum_lock) {
+                                    mousenum_lock = false;
+                                    ergodox_right_led_2_off();
+                                }
+                                layer_off(_MNUM);
+                            }
+                            layer_on(_FPS);
+                            ergodox_right_led_1_on();
+                        } else {
+                            layer_off(_FPS);
+                            ergodox_right_led_1_off();
+                        }
+                    } else {
+                        // If FPS layer active, LGUI activates FPS2 layer.
+                        if (IS_LAYER_ON(_FPS)) {
+                            if (keycode == KC_LGUI) {
+                                layer_on(_FPS2);
+                                process_key = false;
+                            }
+                        }
+                    }
+                } else {
+                    // Key Up
+                    // Only process the keycode for GUI up if we previously
+                    // processed it for key down.
+                    if (keycode == KC_LGUI) {
+                        process_key = ((mod_state & MOD_BIT(KC_LGUI)) != 0);
+                        // For LGUI, key up also disables FPS2 overlay.
+                        if (IS_LAYER_ON(_FPS2)) {
+                            layer_off(_FPS2);
+                        }
+                    } else {
+                        process_key = ((mod_state & MOD_BIT(KC_RGUI)) != 0);
                     }
                 }
+                return process_key;
             }
-            return true; // Go ahead and process this key
 
         // There should be two keys with this keycode assigned. If both are
         // depressed together, normally this will cause a string macro to be
