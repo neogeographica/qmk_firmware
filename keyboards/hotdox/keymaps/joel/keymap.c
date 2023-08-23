@@ -521,9 +521,6 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
                         if ((keycode == KC_RGUI) && IS_LAYER_ON(_FPS2)) {
                             // RGUI-after-LGUI while FPS mode is enabled.
                             both_pressed = true;
-                            // For symmetry, we won't send RGUI keycode for
-                            // this combo since we didn't send LGUI.
-                            process_key = false;
                         }
                     }
                     if (both_pressed) {
@@ -542,6 +539,9 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
                             layer_off(_FPS);
                             ergodox_right_led_1_off();
                         }
+                        // Never send the GUI keycode for the second key
+                        // pressed.
+                        process_key = false;
                     } else {
                         // If FPS layer active, LGUI activates FPS2 layer.
                         if (IS_LAYER_ON(_FPS)) {
